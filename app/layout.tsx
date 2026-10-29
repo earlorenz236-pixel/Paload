@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SubmissionProvider } from "@/context/SubmissionContext";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -21,6 +23,8 @@ export const metadata: Metadata = {
   description: "Easily submit receiver details and reload Satellite, GSat, Fili TV, Sky Direct, and Signal units.",
 };
 
+import { GlobalAuthModal } from "@/components/GlobalAuthModal";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -28,7 +32,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${inter.className} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-[#060807] text-zinc-100 overflow-x-hidden w-full">
-        <SubmissionProvider>{children}</SubmissionProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <SubmissionProvider>
+              {children}
+              <GlobalAuthModal />
+            </SubmissionProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
