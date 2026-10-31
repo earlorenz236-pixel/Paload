@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSubmissions, Submission } from "@/context/SubmissionContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -37,6 +38,7 @@ import {
   ShieldAlert,
   X,
   LogIn,
+  Loader2,
 } from "lucide-react";
 
 interface ConfirmDialogState {
@@ -46,9 +48,12 @@ interface ConfirmDialogState {
 }
 
 export function SubmissionHistory() {
-  const { submissions, archiveSubmission } = useSubmissions();
+  const router = useRouter();
+  const { submissions, loading: submissionsLoading, archiveSubmission } = useSubmissions();
   const { t } = useLanguage();
-  const { user, openAuthModal } = useAuth();
+  const { user, loading: authLoading, openAuthModal } = useAuth();
+
+  const isLoading = submissionsLoading || authLoading;
 
   const [historyView, setHistoryView] = useState<"active" | "archived">("active");
   const [previewArchivedIds, setPreviewArchivedIds] = useState<Set<string>>(new Set());
@@ -64,6 +69,8 @@ export function SubmissionHistory() {
     const el = document.getElementById("info-form");
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push("/#info-form");
     }
     if (!user) {
       openAuthModal("login");
@@ -307,7 +314,18 @@ export function SubmissionHistory() {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-zinc-800/60">
-                {submissions.length === 0 ? (
+                {isLoading ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={8} className="h-56 text-center">
+                      <div className="flex flex-col items-center justify-center p-8 text-center space-y-3">
+                        <Loader2 className="size-7 text-emerald-400 animate-spin" />
+                        <p className="text-xs text-zinc-400">
+                          {t.auth.loadingHistory}
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : submissions.length === 0 ? (
                   /* Initial empty state when no submissions exist */
                   <TableRow className="hover:bg-transparent">
                     <TableCell colSpan={8} className="h-56 text-center">
@@ -320,7 +338,7 @@ export function SubmissionHistory() {
                             {t.history.emptyTitle}
                           </h4>
                           <p className="text-xs text-zinc-400 leading-relaxed">
-                            {t.history.emptyBody}
+                            {!user ? t.auth.signInPromptMessage : t.history.emptyBody}
                           </p>
                         </div>
                         {!user ? (
@@ -330,7 +348,7 @@ export function SubmissionHistory() {
                             className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-1"
                           >
                             <LogIn className="size-3.5 mr-1.5" />
-                            <span>Sign In to View History</span>
+                            <span>{t.auth.signInToViewHistory}</span>
                           </Button>
                         ) : (
                           <Button
@@ -501,7 +519,14 @@ export function SubmissionHistory() {
 
           {/* Mobile Responsive Cards */}
           <div className="md:hidden">
-            {submissions.length === 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center p-10 text-center space-y-3">
+                <Loader2 className="size-6 text-emerald-400 animate-spin" />
+                <p className="text-xs text-zinc-400">
+                  {t.auth.loadingHistory}
+                </p>
+              </div>
+            ) : submissions.length === 0 ? (
               /* Initial empty state on mobile */
               <div className="flex flex-col items-center justify-center p-10 text-center space-y-3">
                 <div className="flex size-12 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950/80 text-zinc-400">
@@ -512,16 +537,27 @@ export function SubmissionHistory() {
                     {t.history.emptyTitle}
                   </h4>
                   <p className="text-xs text-zinc-400 leading-relaxed">
-                    {t.history.emptyBody}
+                    {!user ? t.auth.signInPromptMessage : t.history.emptyBody}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={scrollToForm}
-                  className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-1"
-                >
-                  {t.history.fillOutButton}
-                </Button>
+                {!user ? (
+                  <Button
+                    size="sm"
+                    onClick={() => openAuthModal("login")}
+                    className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-1"
+                  >
+                    <LogIn className="size-3.5 mr-1.5" />
+                    <span>{t.auth.signInToViewHistory}</span>
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={scrollToForm}
+                    className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-1"
+                  >
+                    {t.history.fillOutButton}
+                  </Button>
+                )}
               </div>
             ) : historyView === "archived" && archivedSubmissions.length === 0 ? (
               /* Empty state for archived submissions on mobile */

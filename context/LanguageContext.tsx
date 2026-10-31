@@ -7,6 +7,7 @@ export type Language = "en" | "ceb";
 export interface ArchiveUiTranslations {
   archiveBtn: string;
   softDeleteBtn: string;
+  deleteBtn: string;
   restoreBtn: string;
   viewActiveTab: string;
   viewArchivedTab: (count: number) => string;
@@ -26,7 +27,10 @@ export interface ArchiveUiTranslations {
     softDeleteDesc: string;
     restoreTitle: string;
     restoreDesc: string;
+    deleteTitle: string;
+    deleteDesc: string;
     warningNote: string;
+    deleteWarningNote: string;
     customerLabel: string;
     accountLabel: string;
     unitLabel: string;
@@ -35,6 +39,7 @@ export interface ArchiveUiTranslations {
     confirmArchiveBtn: string;
     confirmSoftDeleteBtn: string;
     confirmRestoreBtn: string;
+    confirmDeleteBtn: string;
   };
 }
 
@@ -206,11 +211,22 @@ export interface Translations {
     doneStatus: string;
     archiveUi: ArchiveUiTranslations;
   };
+  auth: {
+    registrationSuccessTitle: string;
+    registrationSuccessMessage: string;
+    registrationSuccessVerificationRequired: string;
+    continueBtn: string;
+    okBtn: string;
+    signInToViewHistory: string;
+    signInPromptMessage: string;
+    loadingHistory: string;
+  };
   admin: {
     liveBadge: string;
     title: string;
     subtitle: string;
     clearSubmissionsBtn: string;
+    refreshDataBtn: string;
     noticeTitle: string;
     noticeBody: string;
     totalSubmissionsTitle: string;
@@ -443,11 +459,11 @@ const translations: Record<Language, Translations> = {
       sessionLogBadge: "Session Log",
       title: "Submission History",
       subtitle:
-        "Review your previously submitted reload requests from this session.",
+        "Review and track reload requests submitted from your authenticated customer account.",
       returnToForm: "Return to Submission Form",
-      temporaryNoticeTitle: "Session-Only Application State",
+      temporaryNoticeTitle: "Account-Linked History",
       temporaryNoticeBody:
-        "Records are held in temporary shared React memory. Because this prototype does not connect to an external database, submission history is active for this session only and will reset upon page refresh or app restart.",
+        "Your reload requests and payment references are securely saved in Supabase and associated with your authenticated account. Your records remain permanently accessible across sessions and devices.",
       submittedRequestsTitle: "Your Submitted Requests",
       recordCount: (count: number) =>
         `${count} ${count === 1 ? "record" : "records"}`,
@@ -477,42 +493,49 @@ const translations: Record<Language, Translations> = {
       doneStatus: "Done",
       archiveUi: {
         archiveBtn: "Archive",
-        softDeleteBtn: "Soft Delete",
+        softDeleteBtn: "Archive",
+        deleteBtn: "Delete",
         restoreBtn: "Restore",
         viewActiveTab: "Active Submissions",
         viewArchivedTab: (count: number) => `Archived (${count})`,
-        archivedSectionTitle: "Archived Submissions (UI Preview)",
+        archivedSectionTitle: "Archived Submissions",
         archivedSectionSub:
-          "Review reload submissions that have been archived during this session.",
+          "Review reload submissions that have been archived. Archived records do not count toward active submission statistics.",
         archivedEmptyTitle: "No archived submissions yet",
         archivedEmptyBody:
-          "You can test archiving your reload requests using the Archive button on any record above.",
-        uiPreviewBadge: "UI-Only Preview",
+          "You can archive your reload requests using the Archive button on any record above.",
+        uiPreviewBadge: "Live Database",
         uiPreviewNotice:
-          "UI Notice: Database integration is pending. Submissions are preserved in active session memory and are not permanently removed or modified.",
-        softDeletedBadge: "Soft-Deleted (UI Preview)",
-        archivedBadge: "Archived (UI Preview)",
+          "Record updated in Supabase database.",
+        softDeletedBadge: "Archived",
+        archivedBadge: "Archived",
         activeBadge: "Active",
         confirmDialog: {
-          archiveTitle: "Archive Submission (UI Preview)",
+          archiveTitle: "Archive Submission",
           archiveDesc:
-            "This will move the selected submission to your Archived section for this session. It remains completely restorable at any time.",
-          softDeleteTitle: "Soft Delete Submission (UI Preview)",
+            "This will move the selected submission to your Archived section. It can be restored at any time.",
+          softDeleteTitle: "Archive Submission",
           softDeleteDesc:
-            "This flags the submission as soft-deleted in the UI preview without permanently purging it from memory.",
-          restoreTitle: "Restore Submission (UI Preview)",
+            "This moves the submission to the archived section without permanently deleting it.",
+          restoreTitle: "Restore Submission",
           restoreDesc:
             "This reactivates this submission back into your primary active submissions list.",
+          deleteTitle: "Permanently Delete Record",
+          deleteDesc:
+            "This will permanently remove this submission from the database. This action cannot be undone.",
           warningNote:
-            "Notice: This action is a frontend preview. No database mutations or permanent deletions will occur.",
+            "Notice: Changes are saved to your authenticated account in Supabase.",
+          deleteWarningNote:
+            "Warning: This will permanently delete this record from the database.",
           customerLabel: "Customer Name",
           accountLabel: "Account Number",
           unitLabel: "Unit Type",
           amountLabel: "Payment Amount",
           cancelBtn: "Cancel",
-          confirmArchiveBtn: "Confirm Archive (UI Preview)",
-          confirmSoftDeleteBtn: "Confirm Soft Delete (UI Preview)",
-          confirmRestoreBtn: "Confirm Restore (UI Preview)",
+          confirmArchiveBtn: "Confirm Archive",
+          confirmSoftDeleteBtn: "Confirm Archive",
+          confirmRestoreBtn: "Confirm Restore",
+          confirmDeleteBtn: "Delete Permanently",
         },
       },
     },
@@ -520,13 +543,14 @@ const translations: Record<Language, Translations> = {
       liveBadge: "Live Management",
       title: "Admin Dashboard",
       subtitle:
-        "Connected directly to the User POV form in shared application state.",
+        "Connected live to Supabase PostgreSQL database.",
       clearSubmissionsBtn: "Clear Submissions",
-      noticeTitle: "In-Memory Application State",
+      refreshDataBtn: "Refresh Data",
+      noticeTitle: "Live Database Synchronization",
       noticeBody:
-        "Submissions are held in temporary shared React memory between the User POV form and this Admin Dashboard. This prototype does not use a persistent database; records will reset if the server restarts or browser storage is cleared.",
+        "Submissions and payment records are synchronized live with Supabase PostgreSQL (load_requests, payments, and profiles). All active and archived records persist securely across sessions and page refreshes.",
       totalSubmissionsTitle: "Total Submissions",
-      totalSubmissionsSub: "Calculated from actual user form submissions.",
+      totalSubmissionsSub: "Active reload requests awaiting or completed (excludes archived).",
       pendingCountTitle: "Pending Verification",
       pendingCountSub: (count: number) =>
         count === 1 ? "1 order awaiting review" : `${count} orders awaiting review`,
@@ -535,7 +559,7 @@ const translations: Record<Language, Translations> = {
         count === 1 ? "1 verified order" : `${count} verified orders`,
       realtimeCardTitle: "Real-Time User POV Connection",
       realtimeCardSub:
-        "When a user submits their receiver details, they appear here instantly without refreshing.",
+        "When a user submits their receiver details, they appear here instantly via Supabase real-time sync.",
       testUserPovBtn: "Test User POV Form",
       tableCardTitle: "User Submissions",
       tableCardSub: "Detailed view of all submitted receiver reload requests.",
@@ -583,51 +607,71 @@ const translations: Record<Language, Translations> = {
       completedBadge: "Done",
       archiveUi: {
         archiveBtn: "Archive",
-        softDeleteBtn: "Soft Delete",
+        softDeleteBtn: "Archive",
+        deleteBtn: "Delete",
         restoreBtn: "Restore",
         viewActiveTab: "Active Records",
         viewArchivedTab: (count: number) => `Archived Records (${count})`,
-        archivedSectionTitle: "Archived Customer Records (UI Preview)",
+        archivedSectionTitle: "Archived Customer Records",
         archivedSectionSub:
-          "Organize and inspect customer orders that have been archived or soft-deleted.",
+          "Organize and inspect customer orders that have been archived. Archived records do not contribute to active submission statistics.",
         archivedEmptyTitle: "No archived records yet",
         archivedEmptyBody:
-          "Click the 'Archive' action on any customer record in the active table above to preview how archived orders are securely separated.",
-        uiPreviewBadge: "UI-Only Preview • No DB Changes",
+          "Click the 'Archive' action on any customer record in the active table above to move it to the archived records view.",
+        uiPreviewBadge: "Live Supabase Database",
         uiPreviewNotice:
-          "UI Notice: Database integration is pending. Archived records and soft-delete states are prepared for UI demonstration and do not alter or permanently delete any session records.",
-        softDeletedBadge: "Soft-Deleted (UI Preview)",
-        archivedBadge: "Archived (UI Preview)",
+          "Action successfully synchronized with the Supabase database.",
+        softDeletedBadge: "Archived",
+        archivedBadge: "Archived",
         activeBadge: "Active",
         confirmDialog: {
-          archiveTitle: "Archive Customer Record (UI Preview)",
+          archiveTitle: "Archive Customer Record",
           archiveDesc:
-            "This action moves this customer order to the Archived section. It remains completely preserved and restorable at any time.",
-          softDeleteTitle: "Soft Delete Customer Record (UI Preview)",
+            "This action moves this customer order to the Archived section and excludes it from active dashboard statistics. It can be restored at any time.",
+          softDeleteTitle: "Archive Customer Record",
           softDeleteDesc:
-            "This flags the record as soft-deleted in the UI preview without permanently deleting data.",
-          restoreTitle: "Restore Customer Record (UI Preview)",
+            "This moves this customer order to the Archived section without permanently deleting it.",
+          restoreTitle: "Restore Customer Record",
           restoreDesc:
-            "This reactivates the customer order and restores it back to the primary active records table.",
+            "This reactivates the customer order and restores it back to active records and statistics.",
+          deleteTitle: "Permanently Delete Record",
+          deleteDesc:
+            "This will permanently remove this load request and associated payment records from Supabase. This action cannot be undone.",
           warningNote:
-            "Notice: This action is a frontend preview. No database mutations or permanent deletions will occur.",
+            "Notice: This change is saved directly to the Supabase database.",
+          deleteWarningNote:
+            "Warning: This action permanently deletes the data from Supabase PostgreSQL. This cannot be undone.",
           customerLabel: "Customer Name",
           accountLabel: "Account Number",
           unitLabel: "Unit Type",
           amountLabel: "Payment Amount",
           cancelBtn: "Cancel",
-          confirmArchiveBtn: "Confirm Archive (UI Preview)",
-          confirmSoftDeleteBtn: "Confirm Soft Delete (UI Preview)",
-          confirmRestoreBtn: "Confirm Restore (UI Preview)",
+          confirmArchiveBtn: "Confirm Archive",
+          confirmSoftDeleteBtn: "Confirm Archive",
+          confirmRestoreBtn: "Confirm Restore",
+          confirmDeleteBtn: "Delete Permanently",
         },
       },
       footerTitle: "Paload ko • Admin Console",
-      footerSubtitle: "In-memory prototype connected to User POV form.",
+      footerSubtitle: "Connected directly to live Supabase PostgreSQL database.",
     },
     footer: {
       brandSubtitle:
         "Initial UI Prototype • Receiver Reload Information System",
       disclaimer: "Frontend prototype only. No data stored.",
+    },
+    auth: {
+      registrationSuccessTitle: "Account Created Successfully!",
+      registrationSuccessMessage:
+        "Your Paload ko account has been created. You can now sign in and start using the system.",
+      registrationSuccessVerificationRequired:
+        "Your Paload ko account has been created, but verification is still needed. Please check your email to verify your account before signing in.",
+      continueBtn: "Continue",
+      okBtn: "OK",
+      signInToViewHistory: "Sign In to View History",
+      signInPromptMessage:
+        "Please sign in to your customer account to view your reload history and transactions.",
+      loadingHistory: "Loading your submission history...",
     },
   },
   ceb: {
@@ -801,11 +845,11 @@ const translations: Record<Language, Translations> = {
       sessionLogBadge: "Log sa Sesyon",
       title: "Kasaysayan sa mga Gisumite",
       subtitle:
-        "Susiha ang imong mga naunang hangyo sa pagpaload gikan niini nga sesyon.",
+        "Susiha ug subaya ang mga hangyo sa pagpaload nga konektado sa imong rehistradong account.",
       returnToForm: "Balik sa Porma sa Pagsumite",
-      temporaryNoticeTitle: "Kahimtang sa Sesyon Lamang",
+      temporaryNoticeTitle: "Kasaysayan nga Nakakonekta sa Account",
       temporaryNoticeBody:
-        "Ang mga rekord gitipigan sa temporaryong memorya sa React. Tungod kay kini nga prototype walay gawas nga database, ang kasaysayan aktibo lamang niini nga sesyon ug mawala kon i-refresh o i-restart ang app.",
+        "Ang imong mga hangyo sa reload ug reference sa bayad luwas nga gitipigan sa Supabase ug konektado sa imong authenticated account. Ang imong mga rekord magpabilin bisan kanus-a ka mo-sign out o mobalhin og device.",
       submittedRequestsTitle: "Imong mga Naisumite nga Hangyo",
       recordCount: (count: number) =>
         count === 1 ? "1 ka rekord" : `${count} ka mga rekord`,
@@ -835,42 +879,49 @@ const translations: Record<Language, Translations> = {
       doneStatus: "Nahuman na",
       archiveUi: {
         archiveBtn: "I-archive",
-        softDeleteBtn: "I-soft Delete",
+        softDeleteBtn: "I-archive",
+        deleteBtn: "Papason",
         restoreBtn: "Ibalik",
         viewActiveTab: "Aktibong mga Gisumite",
         viewArchivedTab: (count: number) => `Naka-archive (${count})`,
-        archivedSectionTitle: "Mga Naka-archive nga Gisumite (UI Preview)",
+        archivedSectionTitle: "Mga Naka-archive nga Gisumite",
         archivedSectionSub:
-          "Susiha ang mga hangyo sa pagpaload nga gi-archive niini nga sesyon.",
+          "Susiha ang mga hangyo sa pagpaload nga gi-archive. Ang mga naka-archive dili maapil sa estadistika sa aktibong mga gisumite.",
         archivedEmptyTitle: "Wala pay naka-archive nga gisumite",
         archivedEmptyBody:
-          "Mahimo nimong sulayan ang pag-archive sa imong mga naunang gisumite gamit ang Archive nga aksyon sa bisan unsang rekord sa ibabaw.",
-        uiPreviewBadge: "UI-Only Preview",
+          "Mahimo nimong i-archive ang imong mga naunang gisumite gamit ang Archive nga aksyon sa bisan unsang rekord sa ibabaw.",
+        uiPreviewBadge: "Live nga Database",
         uiPreviewNotice:
-          "Pahibalo sa UI: Gihulat pa ang database integration. Ang mga gisumite luwas nga gitipigan sa memorya sa sesyon ug dili permanenteng papason o usbon.",
-        softDeletedBadge: "Naka-soft Delete (UI Preview)",
-        archivedBadge: "Naka-archive (UI Preview)",
+          "Narekord sa database sa Supabase.",
+        softDeletedBadge: "Naka-archive",
+        archivedBadge: "Naka-archive",
         activeBadge: "Aktibo",
         confirmDialog: {
-          archiveTitle: "I-archive ang Gisumite (UI Preview)",
+          archiveTitle: "I-archive ang Gisumite",
           archiveDesc:
-            "Ibalhin niini ang napiling gisumite ngadto sa seksyon sa Naka-archive alang niini nga sesyon. Mahimo kining ibalik bisan unsang orasa.",
-          softDeleteTitle: "I-soft Delete ang Gisumite (UI Preview)",
+            "Ibalhin niini ang napiling gisumite ngadto sa seksyon sa Naka-archive. Mahimo kining ibalik bisan unsang orasa.",
+          softDeleteTitle: "I-archive ang Gisumite",
           softDeleteDesc:
-            "Timaan kini nga gi-soft delete ang gisumite sa UI preview nga dili permanenteng kuhaon gikan sa memorya.",
-          restoreTitle: "Ibalik ang Gisumite (UI Preview)",
+            "Ibalhin niini ang gisumite ngadto sa naka-archive nga dili kini permanenteng papason.",
+          restoreTitle: "Ibalik ang Gisumite",
           restoreDesc:
             "Ibalik niini kini nga gisumite ngadto sa imong pangunang aktibong listahan sa mga gisumite.",
+          deleteTitle: "Permanenteng Papason ang Rekord",
+          deleteDesc:
+            "Permanenteng kuhaon niini nga hangyo sa reload gikan sa database. Dili na kini mabalik.",
           warningNote:
-            "Pahibalo: Kini nga aksyon usa ka frontend preview. Walay kausaban o permanenteng pagtangtang sa database nga mahitabo.",
+            "Pahibalo: Ang mga kausaban gitipigan sa imong authenticated account sa Supabase.",
+          deleteWarningNote:
+            "Pahibalo: Kini nga aksyon permanente ug dili na mabalik gikan sa database.",
           customerLabel: "Pangalan sa Kustomer",
           accountLabel: "Numero sa Account",
           unitLabel: "Klase sa Unit",
           amountLabel: "Kantidad sa Bayad",
           cancelBtn: "Kanselahon",
-          confirmArchiveBtn: "Kumpirmaha ang Pag-archive (UI Preview)",
-          confirmSoftDeleteBtn: "Kumpirmaha ang Soft Delete (UI Preview)",
-          confirmRestoreBtn: "Kumpirmaha ang Pagbalik (UI Preview)",
+          confirmArchiveBtn: "Kumpirmaha ang Pag-archive",
+          confirmSoftDeleteBtn: "Kumpirmaha ang Pag-archive",
+          confirmRestoreBtn: "Kumpirmaha ang Pagbalik",
+          confirmDeleteBtn: "Permanenteng Papason",
         },
       },
     },
@@ -878,14 +929,15 @@ const translations: Record<Language, Translations> = {
       liveBadge: "Buhi nga Pagdumala",
       title: "Admin Dashboard",
       subtitle:
-        "Direktang konektado sa porma sa kustomer pinaagi sa shared application state.",
+        "Direktang konektado sa Supabase PostgreSQL database.",
       clearSubmissionsBtn: "Hawani ang mga Gisumite",
-      noticeTitle: "Temporaryong Memorya sa Aplikasyon",
+      refreshDataBtn: "I-refresh ang Datos",
+      noticeTitle: "Buhi nga Koneksyon sa Supabase Database",
       noticeBody:
-        "Ang mga gisumite gitipigan sa temporaryong shared React memory tali sa porma sa kustomer ug niining Admin Dashboard. Kini nga prototype wala naggamit og database; mawala ang mga rekord kung i-restart ang server o hawani ang storage.",
+        "Ang mga hangyo sa reload ug rekord sa bayad direktang nakasubay sa Supabase PostgreSQL (load_requests, payments, ug profiles). Ang tanang aktibo ug naka-archive nga rekord magpabilin bisan i-refresh ang panid.",
       totalSubmissionsTitle: "Kinatibuk-ang Gisumite",
       totalSubmissionsSub:
-        "Gikalkula gikan sa aktwal nga mga gisumite sa kustomer.",
+        "Aktibong mga hangyo sa pagpaload (wala giapil ang naka-archive).",
       pendingCountTitle: "Gipaabot ang Pag-beripika",
       pendingCountSub: (count: number) =>
         count === 1
@@ -898,7 +950,7 @@ const translations: Record<Language, Translations> = {
           : `${count} ka mga order ang nakumpirma`,
       realtimeCardTitle: "Koneksyon sa Kustomer sa Tinuod nga Oras",
       realtimeCardSub:
-        "Kung ang kustomer magsumite sa ilang detalye sa receiver, makita dayon kini dinhi nga dili na kinahanglan i-refresh.",
+        "Kung ang kustomer magsumite sa ilang detalye sa receiver, makita dayon kini dinhi pinaagi sa Supabase real-time sync.",
       testUserPovBtn: "Sulayi ang Porma sa Kustomer",
       tableCardTitle: "Mga Gisumite sa Kustomer",
       tableCardSub:
@@ -949,51 +1001,71 @@ const translations: Record<Language, Translations> = {
       completedBadge: "Nahuman na",
       archiveUi: {
         archiveBtn: "I-archive",
-        softDeleteBtn: "I-soft Delete",
+        softDeleteBtn: "I-archive",
+        deleteBtn: "Papason",
         restoreBtn: "Ibalik",
         viewActiveTab: "Aktibong mga Rekord",
         viewArchivedTab: (count: number) => `Naka-archive nga Rekord (${count})`,
-        archivedSectionTitle: "Mga Naka-archive nga Rekord sa Kustomer (UI Preview)",
+        archivedSectionTitle: "Mga Naka-archive nga Rekord sa Kustomer",
         archivedSectionSub:
-          "Organisaha ug susiha ang mga order sa kustomer nga gi-archive o gi-soft delete.",
+          "Organisaha ug susiha ang mga order sa kustomer nga gi-archive. Ang mga naka-archive dili maapil sa estadistika sa aktibong mga gisumite.",
         archivedEmptyTitle: "Wala pay naka-archive nga rekord",
         archivedEmptyBody:
-          "I-click ang 'I-archive' nga aksyon sa bisan unsang rekord sa kustomer sa aktibong lamesa sa ibabaw aron masulayan kon unsaon pagbulag ang mga naka-archive nga order.",
-        uiPreviewBadge: "UI-Only Preview • Walay Kausaban sa DB",
+          "I-click ang 'I-archive' sa bisan unsang aktibong rekord sa ibabaw aron ibalhin kini ngadto sa naka-archive.",
+        uiPreviewBadge: "Live Supabase Database",
         uiPreviewNotice:
-          "Pahibalo sa UI: Gihulat pa ang database integration. Ang mga naka-archive nga rekord ug soft-delete giandam alang sa UI preview ug dili permanenteng mousab o mopapas sa mga rekord sa sesyon.",
-        softDeletedBadge: "Naka-soft Delete (UI Preview)",
-        archivedBadge: "Naka-archive (UI Preview)",
+          "Malampusong narekord ang aksyon sa Supabase database.",
+        softDeletedBadge: "Naka-archive",
+        archivedBadge: "Naka-archive",
         activeBadge: "Aktibo",
         confirmDialog: {
-          archiveTitle: "I-archive ang Rekord sa Kustomer (UI Preview)",
+          archiveTitle: "I-archive ang Rekord sa Kustomer",
           archiveDesc:
-            "Ibalhin niini nga aksyon kini nga order sa kustomer ngadto sa seksyon sa Naka-archive. Luwas kini ug mahimong ibalik bisan unsang orasa.",
-          softDeleteTitle: "I-soft Delete ang Rekord sa Kustomer (UI Preview)",
+            "Ibalhin niini nga aksyon kini nga order sa kustomer ngadto sa seksyon sa Naka-archive ug tangtangon sa aktibong estadistika. Mahimo kining ibalik bisan unsang orasa.",
+          softDeleteTitle: "I-archive ang Rekord sa Kustomer",
           softDeleteDesc:
-            "Timaan kini nga gi-soft delete ang rekord sa UI preview nga dili permanenteng magpapas og datos.",
-          restoreTitle: "Ibalik ang Rekord sa Kustomer (UI Preview)",
+            "Ibalhin niini ang order sa kustomer ngadto sa Naka-archive nga dili permanenteng magpapas og datos.",
+          restoreTitle: "Ibalik ang Rekord sa Kustomer",
           restoreDesc:
-            "Ibalik niini ang order sa kustomer ngadto sa pangunang lamesa sa mga aktibong rekord.",
+            "Ibalik niini ang order sa kustomer ngadto sa pangunang lamesa sa mga aktibong rekord ug estadistika.",
+          deleteTitle: "Permanenteng Papason ang Rekord",
+          deleteDesc:
+            "Permanenteng kuhaon niini nga hangyo sa reload ug rekord sa bayad gikan sa Supabase. Dili na kini mabalik.",
           warningNote:
-            "Pahibalo: Kini nga aksyon usa ka frontend preview. Walay kausaban o permanenteng pagtangtang sa database nga mahitabo.",
+            "Pahibalo: Kini nga aksyon gitipigan direkta sa database sa Supabase.",
+          deleteWarningNote:
+            "Pahibalo: Kini nga aksyon permanente ug dili na mabalik gikan sa database.",
           customerLabel: "Pangalan sa Kustomer",
           accountLabel: "Numero sa Account",
           unitLabel: "Klase sa Unit",
           amountLabel: "Kantidad sa Bayad",
           cancelBtn: "Kanselahon",
-          confirmArchiveBtn: "Kumpirmaha ang Pag-archive (UI Preview)",
-          confirmSoftDeleteBtn: "Kumpirmaha ang Soft Delete (UI Preview)",
-          confirmRestoreBtn: "Kumpirmaha ang Pagbalik (UI Preview)",
+          confirmArchiveBtn: "Kumpirmaha ang Pag-archive",
+          confirmSoftDeleteBtn: "Kumpirmaha ang Pag-archive",
+          confirmRestoreBtn: "Kumpirmaha ang Pagbalik",
+          confirmDeleteBtn: "Permanenteng Papason",
         },
       },
       footerTitle: "Paload ko • Admin Console",
-      footerSubtitle: "In-memory prototype nga konektado sa porma sa kustomer.",
+      footerSubtitle: "Direktang konektado sa Supabase PostgreSQL database.",
     },
     footer: {
       brandSubtitle:
         "Inisyal nga UI Prototype • Sistema sa Impormasyon sa Pag-reload sa Receiver",
       disclaimer: "Frontend prototype lamang. Walay data nga gitipigan.",
+    },
+    auth: {
+      registrationSuccessTitle: "Malamposong Nahimo ang Account!",
+      registrationSuccessMessage:
+        "Nahimo na ang imong Paload ko account. Mahimo ka na karon nga mosulod ug magsugod sa paggamit sa sistema.",
+      registrationSuccessVerificationRequired:
+        "Nahimo na ang imong Paload ko account, apan gikinahanglan pa ang beripikasyon. Palihug kumpirmaha ang imong account sa dili pa mosulod.",
+      continueBtn: "Padayon (Continue)",
+      okBtn: "OK",
+      signInToViewHistory: "Sulod aron Makita ang Kasaysayan",
+      signInPromptMessage:
+        "Palihug sulod sa imong account aron makita ang imong personal nga kasaysayan sa pagpaload ug mga transaksyon.",
+      loadingHistory: "Gakarga sa imong kasaysayan sa pagpaload...",
     },
   },
 };

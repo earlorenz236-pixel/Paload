@@ -7,6 +7,13 @@ import type { Database } from "@/lib/database.types";
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
+export interface SignUpResult {
+  error: Error | null;
+  user: { id: string; username: string; name: string } | null;
+  requiresVerification: boolean;
+  registeredUsername: string;
+}
+
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
@@ -14,8 +21,14 @@ interface AuthContextType {
   loading: boolean;
   isAuthModalOpen: boolean;
   authModalMode: "login" | "register";
-  openAuthModal: (mode?: "login" | "register") => void;
+  authPrefilledUsername: string;
+  openAuthModal: (mode?: "login" | "register", prefilledUsername?: string) => void;
   closeAuthModal: () => void;
+  isSuccessDialogOpen: boolean;
+  successDialogData: { username: string; requiresVerification: boolean } | null;
+  openSuccessDialog: (data: { username: string; requiresVerification?: boolean }) => void;
+  closeSuccessDialog: () => void;
+  handleSuccessDialogContinue: () => void;
   signIn: (identifier: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (data: {
     username: string;
@@ -23,7 +36,7 @@ interface AuthContextType {
     name: string;
     phoneNumber: string;
     address?: string;
-  }) => Promise<{ error: Error | null; user: User | null }>;
+  }) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -36,14 +49,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
+  const [authPrefilledUsername, setAuthPrefilledUsername] = useState("");
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [successDialogData, setSuccessDialogData] = useState<{
+    username: string;
+    requiresVerification: boolean;
+  } | null>(null);
 
-  const openAuthModal = (mode: "login" | "register" = "login") => {
+  const openAuthModal = (mode: "login" | "register" = "login", prefilledUsername?: string) => {
     setAuthModalMode(mode);
+    if (prefilledUsername !== undefined) {
+      setAuthPrefilledUsername(prefilledUsername);
+    }
     setIsAuthModalOpen(true);
   };
 
   const closeAuthModal = () => {
     setIsAuthModalOpen(false);
+  };
+
+  const openSuccessDialog = (data: { username: string; requiresVerification?: boolean }) => {
+    setSuccessDialogData({
+      username: data.username,
+      requiresVerification: Boolean(data.requiresVerification),
+    });
+    setIsSuccessDialogOpen(true);
+  };
+
+  const closeSuccessDialog = () => {
+    setIsSuccessDialogOpen(false);
+  };
+
+  const handleSuccessDialogContinue = () => {
+    const regUsername = successDialogData?.username || "";
+    setIsSuccessDialogOpen(false);
+    if (!user) {
+      openAuthModal("login", regUsername);
+    }
   };
 
   const supabase = useMemo(() => createClient(), []);
@@ -159,13 +201,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     name: string;
     phoneNumber: string;
     address?: string;
-  }) => {
+  }): Promise<SignUpResult> => {
+    const cleanUsername = username.trim().toLowerCase();
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: username.trim(),
+          username: cleanUsername,
           password,
           name: name.trim(),
           phoneNumber: phoneNumber.trim(),
@@ -174,19 +217,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const result = await res.json();
       if (!res.ok || result.error) {
-        return { error: new Error(result.error || "Registration failed."), user: null };
+        return {
+          error: new Error(result.error || "Registration failed."),
+          user: null,
+          requiresVerification: false,
+          registeredUsername: cleanUsername,
+        };
       }
 
-      // Refresh active user from newly established session cookies
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      if (user) {
-        await fetchProfile(user.id);
-      }
-
-      return { error: null, user };
+      return {
+        error: null,
+        user: result.user || null,
+        requiresVerification: Boolean(result.requiresVerification),
+        registeredUsername: cleanUsername,
+      };
     } catch (err: any) {
-      return { error: err, user: null };
+      return {
+        error: err,
+        user: null,
+        requiresVerification: false,
+        registeredUsername: cleanUsername,
+      };
     }
   };
 
@@ -216,8 +267,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         isAuthModalOpen,
         authModalMode,
+        authPrefilledUsername,
         openAuthModal,
         closeAuthModal,
+        isSuccessDialogOpen,
+        successDialogData,
+        openSuccessDialog,
+        closeSuccessDialog,
+        handleSuccessDialogContinue,
         signIn,
         signUp,
         signOut,

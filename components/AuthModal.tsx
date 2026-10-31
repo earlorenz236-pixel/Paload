@@ -28,18 +28,20 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: "login" | "register";
+  prefilledUsername?: string;
 }
 
 export function AuthModal({
   isOpen,
   onClose,
   initialMode = "login",
+  prefilledUsername = "",
 }: AuthModalProps) {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, openSuccessDialog } = useAuth();
   const { language } = useLanguage();
 
   const [mode, setMode] = useState<"login" | "register">(initialMode);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(prefilledUsername);
   const [password, setPassword] = useState("");
   const [accountName, setAccountName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -49,6 +51,16 @@ export function AuthModal({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isBisaya = language === "ceb";
+
+  React.useEffect(() => {
+    if (prefilledUsername) {
+      setUsername(prefilledUsername);
+    }
+  }, [prefilledUsername, isOpen]);
+
+  React.useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode, isOpen]);
 
   const resetForm = () => {
     setUsername("");
@@ -169,7 +181,7 @@ export function AuthModal({
 
     setIsSubmitting(true);
     try {
-      const { error } = await signUp({
+      const { error, requiresVerification, registeredUsername } = await signUp({
         username: cleanUsername,
         password,
         name: cleanName,
@@ -189,14 +201,12 @@ export function AuthModal({
         return;
       }
 
-      setSuccessMessage(
-        isBisaya
-          ? "Malamposong nahimo ang imong account!"
-          : "Account created successfully!"
-      );
-      setTimeout(() => {
-        handleClose();
-      }, 900);
+      // Close registration form and show modern success dialog only after Supabase confirms creation
+      handleClose();
+      openSuccessDialog({
+        username: registeredUsername || cleanUsername,
+        requiresVerification: Boolean(requiresVerification),
+      });
     } catch (err: any) {
       setErrorMessage(err.message || "An unexpected error occurred.");
     } finally {

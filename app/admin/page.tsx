@@ -45,6 +45,7 @@ import {
   CheckCircle2,
   Archive,
   RotateCcw,
+  RotateCw,
   ShieldAlert,
   LogOut,
 } from "lucide-react";
@@ -56,53 +57,67 @@ import { useRouter } from "next/navigation";
 
 interface ConfirmDialogState {
   isOpen: boolean;
-  action: "archive" | "soft-delete" | "restore";
+  action: "archive" | "restore" | "delete";
   record: Submission | null;
 }
 
 export default function AdminPage() {
   const router = useRouter();
   const { signOut } = useAuth();
-  const { submissions, updatePaymentStatus, archiveSubmission, clearSubmissions, loading: submissionsLoading } = useSubmissions();
+  const {
+    submissions,
+    updatePaymentStatus,
+    archiveSubmission,
+    deleteSubmission,
+    refreshSubmissions,
+    loading: submissionsLoading,
+  } = useSubmissions();
   const { language, t } = useLanguage();
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "DONE">("ALL");
   const [adminView, setAdminView] = useState<"active" | "archived">("active");
 
-  // In-memory UI preview tracking for local responsiveness
-  const [previewArchivedIds, setPreviewArchivedIds] = useState<Set<string>>(new Set());
-  const [previewSoftDeletedIds, setPreviewSoftDeletedIds] = useState<Set<string>>(new Set());
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     isOpen: false,
     action: "archive",
     record: null,
   });
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
 
-  // Summary counts
-  const pendingCount = useMemo(
-    () =>
-      submissions.filter(
-        (s) => !s.paymentStatus || s.paymentStatus === "Pending Verification"
-      ).length,
-    [submissions]
-  );
-
-  const doneCount = useMemo(
-    () => submissions.filter((s) => s.paymentStatus === "Done").length,
-    [submissions]
-  );
-
-  // Segregated active vs archived submissions based on database archivedAt and UI state
+  // Segregated active vs archived submissions based on database archivedAt
+  // Consistent counting rules:
+  // - Active Records = records that are not archived
+  // - Archived Records = archived records only
   const activeSubmissions = useMemo(
-    () => submissions.filter((s) => !previewArchivedIds.has(s.id) && !s.archivedAt),
-    [submissions, previewArchivedIds]
+    () => submissions.filter((s) => !s.archivedAt),
+    [submissions]
   );
 
   const archivedSubmissions = useMemo(
-    () => submissions.filter((s) => previewArchivedIds.has(s.id) || !!s.archivedAt),
-    [submissions, previewArchivedIds]
+    () => submissions.filter((s) => !!s.archivedAt),
+    [submissions]
+  );
+
+  // Consistent counting rules:
+  // - Total Submissions = active records only
+  // - Pending Verification = active records with Pending Verification status
+  // - Done / Verified = active records with Done status
+  // Archived records must not contribute to active submission statistics.
+  const totalActiveSubmissions = activeSubmissions.length;
+
+  const pendingCount = useMemo(
+    () =>
+      activeSubmissions.filter(
+        (s) => !s.paymentStatus || s.paymentStatus === "Pending Verification"
+      ).length,
+    [activeSubmissions]
+  );
+
+  const doneCount = useMemo(
+    () => activeSubmissions.filter((s) => s.paymentStatus === "Done").length,
+    [activeSubmissions]
   );
 
   const currentViewList = adminView === "active" ? activeSubmissions : archivedSubmissions;
@@ -127,7 +142,7 @@ export default function AdminPage() {
   }, [currentViewList, searchTerm, statusFilter]);
 
   const openDialog = (
-    action: "archive" | "soft-delete" | "restore",
+    action: "archive" | "restore" | "delete",
     record: Submission
   ) => {
     setConfirmDialog({
@@ -145,36 +160,39 @@ export default function AdminPage() {
     });
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     if (!confirmDialog.record) return;
     const recId = confirmDialog.record.id;
+    setIsProcessingAction(true);
 
-    if (confirmDialog.action === "archive") {
-      archiveSubmission(recId, true);
-      setPreviewArchivedIds((prev) => new Set([...prev, recId]));
-      setActionFeedback(t.admin.archiveUi.confirmDialog.archiveTitle);
-    } else if (confirmDialog.action === "soft-delete") {
-      archiveSubmission(recId, true);
-      setPreviewSoftDeletedIds((prev) => new Set([...prev, recId]));
-      setPreviewArchivedIds((prev) => new Set([...prev, recId]));
-      setActionFeedback(t.admin.archiveUi.confirmDialog.softDeleteTitle);
-    } else if (confirmDialog.action === "restore") {
-      archiveSubmission(recId, false);
-      setPreviewArchivedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(recId);
-        return next;
-      });
-      setPreviewSoftDeletedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(recId);
-        return next;
-      });
-      setActionFeedback(t.admin.archiveUi.confirmDialog.restoreTitle);
+    try {
+      if (confirmDialog.action === "archive") {
+        const res = await archiveSubmission(recId, true);
+        if (res.success) {
+          setActionFeedback(t.admin.archiveUi.confirmDialog.archiveTitle);
+        } else {
+          setActionFeedback(res.error || "Failed to archive record");
+        }
+      } else if (confirmDialog.action === "restore") {
+        const res = await archiveSubmission(recId, false);
+        if (res.success) {
+          setActionFeedback(t.admin.archiveUi.confirmDialog.restoreTitle);
+        } else {
+          setActionFeedback(res.error || "Failed to restore record");
+        }
+      } else if (confirmDialog.action === "delete") {
+        const res = await deleteSubmission(recId);
+        if (res.success) {
+          setActionFeedback(t.admin.archiveUi.confirmDialog.deleteTitle);
+        } else {
+          setActionFeedback(res.error || "Failed to delete record");
+        }
+      }
+    } finally {
+      setIsProcessingAction(false);
+      closeDialog();
+      setTimeout(() => setActionFeedback(null), 4000);
     }
-
-    closeDialog();
-    setTimeout(() => setActionFeedback(null), 4000);
   };
 
   return (
@@ -261,18 +279,17 @@ export default function AdminPage() {
               </p>
             </div>
 
-            {submissions.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearSubmissions}
-                className="w-full sm:w-auto cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-red-400 transition-colors h-9"
-                title={t.admin.clearSubmissionsBtn}
-              >
-                <Trash2 className="mr-1.5 size-3.5" />
-                {t.admin.clearSubmissionsBtn}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refreshSubmissions()}
+              disabled={submissionsLoading}
+              className="w-full sm:w-auto cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors h-9"
+              title={t.admin.refreshDataBtn}
+            >
+              <RotateCw className={`mr-1.5 size-3.5 ${submissionsLoading ? "animate-spin" : ""}`} />
+              {t.admin.refreshDataBtn}
+            </Button>
           </div>
 
           {/* Temporary State Notice Banner */}
@@ -321,7 +338,7 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-black text-white tracking-tight">
-                  {submissions.length}
+                  {totalActiveSubmissions}
                 </div>
                 <CardDescription className="text-xs text-zinc-400 mt-1">
                   {t.admin.totalSubmissionsSub}
@@ -654,7 +671,6 @@ export default function AdminPage() {
                   ) : (
                     filteredSubmissions.map((sub) => {
                       const isDone = sub.paymentStatus === "Done";
-                      const isSoftDeleted = previewSoftDeletedIds.has(sub.id);
                       return (
                         <TableRow
                           key={sub.id}
@@ -721,7 +737,7 @@ export default function AdminPage() {
                           <TableCell className="text-zinc-400 text-xs whitespace-nowrap">
                             {sub.submittedAt}
                           </TableCell>
-                          {/* Actions Column: Verification, Archive, Restore & Soft Delete */}
+                          {/* Actions Column: Verification, Archive, Restore & Permanent Delete */}
                           <TableCell className="text-right whitespace-nowrap">
                             <div className="flex flex-col items-end gap-1.5">
                               {/* Status Badges */}
@@ -735,11 +751,6 @@ export default function AdminPage() {
                                   <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-950/70 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
                                     <Clock className="size-3 text-amber-400" />
                                     <span>{t.admin.pendingStatus}</span>
-                                  </span>
-                                )}
-                                {isSoftDeleted && (
-                                  <span className="inline-flex items-center gap-1 rounded bg-rose-950/70 border border-rose-500/40 px-1.5 py-0.2 text-[10px] font-semibold text-rose-300">
-                                    {t.admin.archiveUi.softDeletedBadge}
                                   </span>
                                 )}
                               </div>
@@ -776,9 +787,9 @@ export default function AdminPage() {
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => openDialog("soft-delete", sub)}
-                                      className="cursor-pointer border-zinc-700 bg-zinc-800/50 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs"
-                                      title={t.admin.archiveUi.softDeleteBtn}
+                                      onClick={() => openDialog("delete", sub)}
+                                      className="cursor-pointer border-zinc-700 bg-zinc-800/50 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs transition-colors"
+                                      title={t.admin.archiveUi.deleteBtn}
                                     >
                                       <Trash2 className="size-3" />
                                     </Button>
@@ -795,18 +806,16 @@ export default function AdminPage() {
                                       <RotateCcw className="mr-1 size-3" />
                                       <span>{t.admin.archiveUi.restoreBtn}</span>
                                     </Button>
-                                    {!isSoftDeleted && (
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => openDialog("soft-delete", sub)}
-                                        className="cursor-pointer border-zinc-700 bg-zinc-800/50 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs"
-                                        title={t.admin.archiveUi.softDeleteBtn}
-                                      >
-                                        <Trash2 className="size-3" />
-                                      </Button>
-                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => openDialog("delete", sub)}
+                                      className="cursor-pointer border-zinc-700 bg-zinc-800/50 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs transition-colors"
+                                      title={t.admin.archiveUi.deleteBtn}
+                                    >
+                                      <Trash2 className="size-3" />
+                                    </Button>
                                   </>
                                 )}
                               </div>
@@ -909,7 +918,6 @@ export default function AdminPage() {
                 <div className="divide-y divide-zinc-800/80">
                   {filteredSubmissions.map((sub) => {
                     const isDone = sub.paymentStatus === "Done";
-                    const isSoftDeleted = previewSoftDeletedIds.has(sub.id);
                     return (
                       <div key={sub.id} className="p-4 space-y-3.5 bg-zinc-950/30">
                         {/* Card Header: Customer Name, Phone, Unit Type & Status Badges */}
@@ -946,11 +954,6 @@ export default function AdminPage() {
                                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 bg-amber-950/70 border border-amber-500/30 rounded-full px-2 py-0.5">
                                   <Clock className="size-3 text-amber-400" />
                                   {t.admin.pendingStatus}
-                                </span>
-                              )}
-                              {isSoftDeleted && (
-                                <span className="inline-flex items-center rounded bg-rose-950/70 border border-rose-500/40 px-1.5 py-0.2 text-[10px] font-semibold text-rose-300">
-                                  {t.admin.archiveUi.softDeletedBadge}
                                 </span>
                               )}
                             </div>
@@ -994,7 +997,7 @@ export default function AdminPage() {
                                     sub.packageDescription === "All Channels"
                                       ? "border-emerald-500/40 bg-emerald-950/80 text-emerald-300"
                                       : "border-zinc-700 bg-zinc-800/80 text-zinc-300"
-                                  }`}
+                                    }`}
                                 >
                                   {sub.packageDescription}
                                 </span>
@@ -1032,7 +1035,7 @@ export default function AdminPage() {
                           )}
                         </div>
 
-                        {/* Mobile Actions: Verification, Archive, Restore & Soft Delete */}
+                        {/* Mobile Actions: Verification, Archive, Restore & Permanent Delete */}
                         <div className="pt-2 border-t border-zinc-800/60 space-y-2">
                           {!isDone && adminView === "active" && (
                             <Button
@@ -1060,11 +1063,11 @@ export default function AdminPage() {
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  onClick={() => openDialog("soft-delete", sub)}
-                                  className="flex-1 cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-rose-500/50"
+                                  onClick={() => openDialog("delete", sub)}
+                                  className="flex-1 cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-rose-500/50 transition-colors"
                                 >
                                   <Trash2 className="mr-1.5 size-3.5" />
-                                  {t.admin.archiveUi.softDeleteBtn}
+                                  {t.admin.archiveUi.deleteBtn}
                                 </Button>
                               </>
                             ) : (
@@ -1077,17 +1080,15 @@ export default function AdminPage() {
                                   <RotateCcw className="mr-1.5 size-3.5" />
                                   {t.admin.archiveUi.restoreBtn}
                                 </Button>
-                                {!isSoftDeleted && (
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => openDialog("soft-delete", sub)}
-                                    className="flex-1 cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-rose-500/50"
-                                  >
-                                    <Trash2 className="mr-1.5 size-3.5" />
-                                    {t.admin.archiveUi.softDeleteBtn}
-                                  </Button>
-                                )}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => openDialog("delete", sub)}
+                                  className="flex-1 cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-rose-500/50 transition-colors"
+                                >
+                                  <Trash2 className="mr-1.5 size-3.5" />
+                                  {t.admin.archiveUi.deleteBtn}
+                                </Button>
                               </>
                             )}
                           </div>
@@ -1102,29 +1103,41 @@ export default function AdminPage() {
         </div>
       </main>
 
-      {/* Confirmation Dialog Modal for Archive, Soft Delete, and Restore */}
-      <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && closeDialog()}>
+      {/* Confirmation Dialog Modal for Archive, Restore, and Permanent Delete */}
+      <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && !isProcessingAction && closeDialog()}>
         <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-2xl max-h-[88dvh] overflow-y-auto overscroll-contain">
           <DialogHeader className="gap-2">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-950/60 px-2.5 py-0.5 text-[10px] font-semibold text-amber-300">
-                <ShieldAlert className="size-3 text-amber-400" />
-                {t.admin.archiveUi.uiPreviewBadge}
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
+                  confirmDialog.action === "delete"
+                    ? "border-rose-500/40 bg-rose-950/60 text-rose-300"
+                    : confirmDialog.action === "archive"
+                    ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
+                    : "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
+                }`}
+              >
+                <ShieldAlert className="size-3" />
+                {confirmDialog.action === "delete"
+                  ? "Permanent Deletion"
+                  : confirmDialog.action === "archive"
+                  ? "Archive Record"
+                  : "Restore Record"}
               </span>
             </div>
             <DialogTitle className="text-lg font-bold text-white">
               {confirmDialog.action === "archive"
                 ? t.admin.archiveUi.confirmDialog.archiveTitle
-                : confirmDialog.action === "soft-delete"
-                ? t.admin.archiveUi.confirmDialog.softDeleteTitle
-                : t.admin.archiveUi.confirmDialog.restoreTitle}
+                : confirmDialog.action === "restore"
+                ? t.admin.archiveUi.confirmDialog.restoreTitle
+                : t.admin.archiveUi.confirmDialog.deleteTitle}
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400 leading-relaxed">
               {confirmDialog.action === "archive"
                 ? t.admin.archiveUi.confirmDialog.archiveDesc
-                : confirmDialog.action === "soft-delete"
-                ? t.admin.archiveUi.confirmDialog.softDeleteDesc
-                : t.admin.archiveUi.confirmDialog.restoreDesc}
+                : confirmDialog.action === "restore"
+                ? t.admin.archiveUi.confirmDialog.restoreDesc
+                : t.admin.archiveUi.confirmDialog.deleteDesc}
             </DialogDescription>
           </DialogHeader>
 
@@ -1165,8 +1178,18 @@ export default function AdminPage() {
             </div>
           )}
 
-          <div className="rounded-lg border border-amber-500/25 bg-amber-950/20 p-2.5 text-[11px] text-amber-200/90">
-            <p>{t.admin.archiveUi.confirmDialog.warningNote}</p>
+          <div
+            className={`rounded-lg border p-2.5 text-[11px] ${
+              confirmDialog.action === "delete"
+                ? "border-rose-500/30 bg-rose-950/20 text-rose-200"
+                : "border-amber-500/25 bg-amber-950/20 text-amber-200/90"
+            }`}
+          >
+            <p>
+              {confirmDialog.action === "delete"
+                ? t.admin.archiveUi.confirmDialog.deleteWarningNote
+                : t.admin.archiveUi.confirmDialog.warningNote}
+            </p>
           </div>
 
           <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2 border-t border-zinc-800">
@@ -1174,6 +1197,7 @@ export default function AdminPage() {
               type="button"
               variant="outline"
               onClick={closeDialog}
+              disabled={isProcessingAction}
               className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-300 h-9 text-xs"
             >
               {t.admin.archiveUi.confirmDialog.cancelBtn}
@@ -1181,18 +1205,19 @@ export default function AdminPage() {
             <Button
               type="button"
               onClick={handleConfirmAction}
+              disabled={isProcessingAction}
               className={`cursor-pointer font-semibold h-9 text-xs shadow-md ${
-                confirmDialog.action === "soft-delete"
+                confirmDialog.action === "delete"
                   ? "bg-rose-600 hover:bg-rose-500 text-white"
                   : confirmDialog.action === "archive"
                   ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
                   : "bg-emerald-500 hover:bg-emerald-400 text-zinc-950"
               }`}
             >
-              {confirmDialog.action === "archive"
+              {confirmDialog.action === "delete"
+                ? t.admin.archiveUi.confirmDialog.confirmDeleteBtn
+                : confirmDialog.action === "archive"
                 ? t.admin.archiveUi.confirmDialog.confirmArchiveBtn
-                : confirmDialog.action === "soft-delete"
-                ? t.admin.archiveUi.confirmDialog.confirmSoftDeleteBtn
                 : t.admin.archiveUi.confirmDialog.confirmRestoreBtn}
             </Button>
           </DialogFooter>

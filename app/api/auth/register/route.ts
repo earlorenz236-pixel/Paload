@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Database } from "@/lib/database.types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -106,38 +104,22 @@ export async function POST(request: NextRequest) {
         role: "customer",
       });
 
-    // 5. Establish authenticated session cookies for the client
-    const response = NextResponse.json({
+    // 5. Account created successfully in Supabase
+    const requiresVerification = Boolean(
+      authData.user &&
+      !authData.user.confirmed_at &&
+      !authData.user.email_confirmed_at
+    );
+
+    return NextResponse.json({
       success: true,
+      requiresVerification,
       user: {
         id: authData.user.id,
         username: cleanUsername,
         name: name.trim(),
       },
     });
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-    const serverClient = createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    });
-
-    await serverClient.auth.signInWithPassword({
-      email: internalEmail,
-      password: password,
-    });
-
-    return response;
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "An unexpected error occurred during registration." },

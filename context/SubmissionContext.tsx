@@ -36,6 +36,7 @@ interface SubmissionContextType {
   addSubmission: (data: Omit<Submission, "id" | "submittedAt">) => Promise<AddSubmissionResult>;
   updatePaymentStatus: (id: string, status: string) => Promise<{ success: boolean; error?: string }>;
   archiveSubmission: (id: string, archive: boolean) => Promise<{ success: boolean; error?: string }>;
+  deleteSubmission: (id: string) => Promise<{ success: boolean; error?: string }>;
   clearSubmissions: () => void;
 }
 
@@ -160,13 +161,14 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
     if (!user) return;
 
     const channel = supabase
-      .channel("public-db-changes")
+      .channel(`customer-db-changes-${user.id}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "load_requests",
+          filter: role !== "admin" ? `customer_id=eq.${user.id}` : undefined,
         },
         () => {
           fetchSubmissions();
@@ -188,7 +190,7 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchSubmissions]);
+  }, [user, role, fetchSubmissions]);
 
   const addSubmission = async (
     data: Omit<Submission, "id" | "submittedAt">
@@ -391,6 +393,28 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const deleteSubmission = async (
+    id: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error: delError } = await supabase
+        .from("load_requests")
+        .delete()
+        .eq("id", id);
+
+      if (delError) {
+        console.error("Error deleting load_request from Supabase:", delError);
+        return { success: false, error: delError.message };
+      }
+
+      setSubmissions((prev) => prev.filter((sub) => sub.id !== id));
+      return { success: true };
+    } catch (err: any) {
+      console.error("Unexpected error in deleteSubmission:", err);
+      return { success: false, error: err.message || "Failed to delete record." };
+    }
+  };
+
   const clearSubmissions = () => {
     setSubmissions([]);
   };
@@ -405,6 +429,7 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
         addSubmission,
         updatePaymentStatus,
         archiveSubmission,
+        deleteSubmission,
         clearSubmissions,
       }}
     >
