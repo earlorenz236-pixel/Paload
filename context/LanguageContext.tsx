@@ -40,6 +40,10 @@ export interface ArchiveUiTranslations {
     confirmSoftDeleteBtn: string;
     confirmRestoreBtn: string;
     confirmDeleteBtn: string;
+    yesDeleteBtn: string;
+    deletingBtn: string;
+    deleteSuccessNotification: (name: string) => string;
+    deleteErrorNotification: (err?: string) => string;
   };
 }
 
@@ -220,6 +224,11 @@ export interface Translations {
     signInToViewHistory: string;
     signInPromptMessage: string;
     loadingHistory: string;
+    signOutConfirmTitle: string;
+    signOutConfirmMessage: string;
+    signOutCancelBtn: string;
+    signOutConfirmBtn: string;
+    signingOutBtn: string;
   };
   admin: {
     liveBadge: string;
@@ -520,9 +529,9 @@ const translations: Record<Language, Translations> = {
           restoreTitle: "Restore Submission",
           restoreDesc:
             "This reactivates this submission back into your primary active submissions list.",
-          deleteTitle: "Permanently Delete Record",
+          deleteTitle: "Delete This Record?",
           deleteDesc:
-            "This will permanently remove this submission from the database. This action cannot be undone.",
+            "Are you sure you want to permanently delete this customer record? This action cannot be undone.",
           warningNote:
             "Notice: Changes are saved to your authenticated account in Supabase.",
           deleteWarningNote:
@@ -535,7 +544,13 @@ const translations: Record<Language, Translations> = {
           confirmArchiveBtn: "Confirm Archive",
           confirmSoftDeleteBtn: "Confirm Archive",
           confirmRestoreBtn: "Confirm Restore",
-          confirmDeleteBtn: "Delete Permanently",
+          confirmDeleteBtn: "Yes, Delete",
+          yesDeleteBtn: "Yes, Delete",
+          deletingBtn: "Deleting...",
+          deleteSuccessNotification: (name: string) =>
+            `Record for "${name}" was permanently deleted successfully.`,
+          deleteErrorNotification: (err?: string) =>
+            `Failed to delete record: ${err || "An unexpected error occurred."}`,
         },
       },
     },
@@ -634,9 +649,9 @@ const translations: Record<Language, Translations> = {
           restoreTitle: "Restore Customer Record",
           restoreDesc:
             "This reactivates the customer order and restores it back to active records and statistics.",
-          deleteTitle: "Permanently Delete Record",
+          deleteTitle: "Delete This Record?",
           deleteDesc:
-            "This will permanently remove this load request and associated payment records from Supabase. This action cannot be undone.",
+            "Are you sure you want to permanently delete this customer record? This action cannot be undone.",
           warningNote:
             "Notice: This change is saved directly to the Supabase database.",
           deleteWarningNote:
@@ -649,7 +664,13 @@ const translations: Record<Language, Translations> = {
           confirmArchiveBtn: "Confirm Archive",
           confirmSoftDeleteBtn: "Confirm Archive",
           confirmRestoreBtn: "Confirm Restore",
-          confirmDeleteBtn: "Delete Permanently",
+          confirmDeleteBtn: "Yes, Delete",
+          yesDeleteBtn: "Yes, Delete",
+          deletingBtn: "Deleting...",
+          deleteSuccessNotification: (name: string) =>
+            `Record for "${name}" was permanently deleted successfully.`,
+          deleteErrorNotification: (err?: string) =>
+            `Failed to delete record: ${err || "An unexpected error occurred."}`,
         },
       },
       footerTitle: "Paload ko • Admin Console",
@@ -672,6 +693,12 @@ const translations: Record<Language, Translations> = {
       signInPromptMessage:
         "Please sign in to your customer account to view your reload history and transactions.",
       loadingHistory: "Loading your submission history...",
+      signOutConfirmTitle: "Sign Out?",
+      signOutConfirmMessage:
+        "Are you sure you want to sign out of your Paload ko account?",
+      signOutCancelBtn: "Cancel",
+      signOutConfirmBtn: "Yes, Sign Out",
+      signingOutBtn: "Signing out...",
     },
   },
   ceb: {
@@ -906,9 +933,9 @@ const translations: Record<Language, Translations> = {
           restoreTitle: "Ibalik ang Gisumite",
           restoreDesc:
             "Ibalik niini kini nga gisumite ngadto sa imong pangunang aktibong listahan sa mga gisumite.",
-          deleteTitle: "Permanenteng Papason ang Rekord",
+          deleteTitle: "Papason Kini nga Rekord?",
           deleteDesc:
-            "Permanenteng kuhaon niini nga hangyo sa reload gikan sa database. Dili na kini mabalik.",
+            "Sigurado ka ba nga gusto nimo papason sa permanente kini nga rekord sa kustomer? Dili na kini mabalik.",
           warningNote:
             "Pahibalo: Ang mga kausaban gitipigan sa imong authenticated account sa Supabase.",
           deleteWarningNote:
@@ -921,7 +948,13 @@ const translations: Record<Language, Translations> = {
           confirmArchiveBtn: "Kumpirmaha ang Pag-archive",
           confirmSoftDeleteBtn: "Kumpirmaha ang Pag-archive",
           confirmRestoreBtn: "Kumpirmaha ang Pagbalik",
-          confirmDeleteBtn: "Permanenteng Papason",
+          confirmDeleteBtn: "Oo, Papasa",
+          yesDeleteBtn: "Oo, Papasa",
+          deletingBtn: "Gipapas...",
+          deleteSuccessNotification: (name: string) =>
+            `Ang rekord para kang "${name}" permanente nang napapas.`,
+          deleteErrorNotification: (err?: string) =>
+            `Napakyas ang pagpapas sa rekord: ${err || "Adunay wala damhang sayop."}`,
         },
       },
     },
@@ -1028,9 +1061,9 @@ const translations: Record<Language, Translations> = {
           restoreTitle: "Ibalik ang Rekord sa Kustomer",
           restoreDesc:
             "Ibalik niini ang order sa kustomer ngadto sa pangunang lamesa sa mga aktibong rekord ug estadistika.",
-          deleteTitle: "Permanenteng Papason ang Rekord",
+          deleteTitle: "Papason Kini nga Rekord?",
           deleteDesc:
-            "Permanenteng kuhaon niini nga hangyo sa reload ug rekord sa bayad gikan sa Supabase. Dili na kini mabalik.",
+            "Sigurado ka ba nga gusto nimo papason sa permanente kini nga rekord sa kustomer? Dili na kini mabalik.",
           warningNote:
             "Pahibalo: Kini nga aksyon gitipigan direkta sa database sa Supabase.",
           deleteWarningNote:
@@ -1043,7 +1076,13 @@ const translations: Record<Language, Translations> = {
           confirmArchiveBtn: "Kumpirmaha ang Pag-archive",
           confirmSoftDeleteBtn: "Kumpirmaha ang Pag-archive",
           confirmRestoreBtn: "Kumpirmaha ang Pagbalik",
-          confirmDeleteBtn: "Permanenteng Papason",
+          confirmDeleteBtn: "Oo, Papasa",
+          yesDeleteBtn: "Oo, Papasa",
+          deletingBtn: "Gipapas...",
+          deleteSuccessNotification: (name: string) =>
+            `Ang rekord para kang "${name}" permanente nang napapas.`,
+          deleteErrorNotification: (err?: string) =>
+            `Napakyas ang pagpapas sa rekord: ${err || "Adunay wala damhang sayop."}`,
         },
       },
       footerTitle: "Paload ko • Admin Console",
@@ -1066,6 +1105,12 @@ const translations: Record<Language, Translations> = {
       signInPromptMessage:
         "Palihug sulod sa imong account aron makita ang imong personal nga kasaysayan sa pagpaload ug mga transaksyon.",
       loadingHistory: "Gakarga sa imong kasaysayan sa pagpaload...",
+      signOutConfirmTitle: "Mogawas Ka?",
+      signOutConfirmMessage:
+        "Sigurado ka ba nga gusto kang mogawas sa imong Paload ko account?",
+      signOutCancelBtn: "Kanselahon",
+      signOutConfirmBtn: "Oo, Gawas",
+      signingOutBtn: "Naggawas...",
     },
   },
 };

@@ -3,8 +3,27 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Tv, Sparkles, LayoutDashboard, History, User, LogIn, LogOut } from "lucide-react";
+import {
+  Tv,
+  Sparkles,
+  LayoutDashboard,
+  History,
+  User,
+  LogIn,
+  LogOut,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { useSubmissions } from "@/context/SubmissionContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +34,9 @@ export function Navbar() {
   const { submissions } = useSubmissions();
   const { t, language } = useLanguage();
   const { user, profile, signOut, openAuthModal } = useAuth();
+
+  const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState<boolean>(false);
+  const [isSigningOut, setIsSigningOut] = useState<boolean>(false);
 
   const isBisaya = language === "ceb";
 
@@ -36,6 +58,17 @@ export function Navbar() {
       el.scrollIntoView({ behavior: "smooth" });
     } else {
       router.push("/#submission-history");
+    }
+  };
+
+  const handleConfirmSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+      setIsSignOutDialogOpen(false);
+      router.push("/");
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
@@ -80,7 +113,7 @@ export function Navbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => signOut()}
+                  onClick={() => setIsSignOutDialogOpen(true)}
                   title={isBisaya ? "Gawas (Sign Out)" : "Sign Out"}
                   className="cursor-pointer text-zinc-400 hover:text-rose-400 hover:bg-zinc-800/60 h-8 px-2 text-xs"
                 >
@@ -140,6 +173,69 @@ export function Navbar() {
           </div>
         </div>
       </header>
+
+      {/* Customer Sign-Out Confirmation Dialog */}
+      <AlertDialog
+        open={isSignOutDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && !isSigningOut) {
+            setIsSignOutDialogOpen(false);
+          }
+        }}
+      >
+        <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-5 sm:p-6 shadow-2xl">
+          <AlertDialogHeader className="gap-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-900/80 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-300">
+                <LogOut className="size-3 text-emerald-400" />
+                <span>Paload ko</span>
+              </span>
+            </div>
+            <AlertDialogTitle className="text-lg font-bold text-white">
+              {t.auth.signOutConfirmTitle}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+              {t.auth.signOutConfirmMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {profile && (
+            <div className="my-1 rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-3 flex items-center justify-between text-xs">
+              <span className="text-zinc-400">Account</span>
+              <span className="font-semibold text-white">
+                {profile.account_name || user?.email}
+              </span>
+            </div>
+          )}
+
+          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-3 border-t border-zinc-800/80">
+            <AlertDialogCancel
+              disabled={isSigningOut}
+              onClick={() => setIsSignOutDialogOpen(false)}
+              className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-300 h-9 text-xs font-medium"
+            >
+              {t.auth.signOutCancelBtn}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isSigningOut}
+              onClick={handleConfirmSignOut}
+              className="cursor-pointer font-semibold bg-zinc-200 hover:bg-white text-zinc-950 h-9 text-xs shadow-md transition-colors"
+            >
+              {isSigningOut ? (
+                <>
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                  <span>{t.auth.signingOutBtn}</span>
+                </>
+              ) : (
+                <>
+                  <LogOut className="mr-1.5 size-3.5" />
+                  <span>{t.auth.signOutConfirmBtn}</span>
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

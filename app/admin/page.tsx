@@ -29,6 +29,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import {
   Tv,
   ArrowLeft,
   Users,
@@ -48,6 +58,8 @@ import {
   RotateCw,
   ShieldAlert,
   LogOut,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import BlurText from "@/components/BlurText";
 import { useLanguage } from "@/context/LanguageContext";
@@ -78,13 +90,32 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "DONE">("ALL");
   const [adminView, setAdminView] = useState<"active" | "archived">("active");
 
-  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+  // Separate states for Archive/Restore vs Permanent Deletion
+  const [archiveDialog, setArchiveDialog] = useState<{
+    isOpen: boolean;
+    action: "archive" | "restore";
+    record: Submission | null;
+  }>({
     isOpen: false,
     action: "archive",
     record: null,
   });
-  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
-  const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
+
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    record: Submission | null;
+  }>({
+    isOpen: false,
+    record: null,
+  });
+
+  const [notification, setNotification] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
+
+  const [isProcessingArchive, setIsProcessingArchive] = useState<boolean>(false);
+  const [isProcessingDelete, setIsProcessingDelete] = useState<boolean>(false);
 
   // Segregated active vs archived submissions based on database archivedAt
   // Consistent counting rules:
@@ -141,97 +172,149 @@ export default function AdminPage() {
     });
   }, [currentViewList, searchTerm, statusFilter]);
 
-  const openDialog = (
-    action: "archive" | "restore" | "delete",
+  const openArchiveDialog = (
+    action: "archive" | "restore",
     record: Submission
   ) => {
-    setConfirmDialog({
+    setArchiveDialog({
       isOpen: true,
       action,
       record,
     });
   };
 
-  const closeDialog = () => {
-    setConfirmDialog({
+  const closeArchiveDialog = () => {
+    if (isProcessingArchive) return;
+    setArchiveDialog({
       isOpen: false,
       action: "archive",
       record: null,
     });
   };
 
-  const handleConfirmAction = async () => {
-    if (!confirmDialog.record) return;
-    const recId = confirmDialog.record.id;
-    setIsProcessingAction(true);
+  const openDeleteDialog = (record: Submission) => {
+    setDeleteDialog({
+      isOpen: true,
+      record,
+    });
+  };
+
+  const closeDeleteDialog = () => {
+    if (isProcessingDelete) return;
+    setDeleteDialog({
+      isOpen: false,
+      record: null,
+    });
+  };
+
+  const handleConfirmArchive = async () => {
+    if (!archiveDialog.record) return;
+    const rec = archiveDialog.record;
+    setIsProcessingArchive(true);
 
     try {
-      if (confirmDialog.action === "archive") {
-        const res = await archiveSubmission(recId, true);
+      if (archiveDialog.action === "archive") {
+        const res = await archiveSubmission(rec.id, true);
         if (res.success) {
-          setActionFeedback(t.admin.archiveUi.confirmDialog.archiveTitle);
+          setNotification({
+            type: "info",
+            message: `Record for "${rec.name}" has been moved to Archived Records.`,
+          });
         } else {
-          setActionFeedback(res.error || "Failed to archive record");
+          setNotification({
+            type: "error",
+            message: res.error || "Failed to archive record.",
+          });
         }
-      } else if (confirmDialog.action === "restore") {
-        const res = await archiveSubmission(recId, false);
+      } else if (archiveDialog.action === "restore") {
+        const res = await archiveSubmission(rec.id, false);
         if (res.success) {
-          setActionFeedback(t.admin.archiveUi.confirmDialog.restoreTitle);
+          setNotification({
+            type: "success",
+            message: `Record for "${rec.name}" has been restored to Active Records.`,
+          });
         } else {
-          setActionFeedback(res.error || "Failed to restore record");
-        }
-      } else if (confirmDialog.action === "delete") {
-        const res = await deleteSubmission(recId);
-        if (res.success) {
-          setActionFeedback(t.admin.archiveUi.confirmDialog.deleteTitle);
-        } else {
-          setActionFeedback(res.error || "Failed to delete record");
+          setNotification({
+            type: "error",
+            message: res.error || "Failed to restore record.",
+          });
         }
       }
     } finally {
-      setIsProcessingAction(false);
-      closeDialog();
-      setTimeout(() => setActionFeedback(null), 4000);
+      setIsProcessingArchive(false);
+      closeArchiveDialog();
+      setTimeout(() => {
+        setNotification((prev) => (prev?.type === "info" ? null : prev));
+      }, 5000);
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    if (!deleteDialog.record) return;
+    const rec = deleteDialog.record;
+    setIsProcessingDelete(true);
+
+    try {
+      const res = await deleteSubmission(rec.id);
+      if (res.success) {
+        setNotification({
+          type: "success",
+          message: t.admin.archiveUi.confirmDialog.deleteSuccessNotification(rec.name),
+        });
+      } else {
+        setNotification({
+          type: "error",
+          message: t.admin.archiveUi.confirmDialog.deleteErrorNotification(res.error),
+        });
+      }
+    } catch (err: any) {
+      setNotification({
+        type: "error",
+        message: t.admin.archiveUi.confirmDialog.deleteErrorNotification(
+          err?.message || "Unknown error"
+        ),
+      });
+    } finally {
+      setIsProcessingDelete(false);
+      setDeleteDialog({ isOpen: false, record: null });
+      setTimeout(() => {
+        setNotification((prev) => (prev?.type === "success" ? null : prev));
+      }, 6000);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#060807] text-zinc-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-200 overflow-x-hidden">
+    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100 font-sans selection:bg-emerald-500/20 selection:text-emerald-200 overflow-x-hidden">
       {/* Admin Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-[#060807]/90 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-3 sm:px-6 gap-2">
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer">
-              <div className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-emerald-500 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-transform group-hover:scale-105 shrink-0">
-                <Tv className="size-4 sm:size-5" />
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-800/70 bg-zinc-950/80 backdrop-blur-md">
+        <div className="container mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 gap-2">
+          <div className="flex items-center gap-3 shrink-0">
+            <Link href="/" className="flex items-center gap-2.5 group cursor-pointer">
+              <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 transition-transform group-hover:scale-105 shrink-0">
+                <Tv className="size-3.5" />
               </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <span className="text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-emerald-400 transition-colors">
-                    Paload ko
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-950/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                    <Shield className="size-2.5" />
-                    {t.nav.adminBadge}
-                  </span>
-                </div>
-                <span className="text-[11px] text-zinc-400 hidden sm:inline">
-                  {t.nav.adminSubtitle}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold tracking-tight text-white group-hover:text-emerald-400 transition-colors">
+                  Paload ko
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
+                  <Shield className="size-2.5" />
+                  {t.nav.adminBadge}
                 </span>
               </div>
             </Link>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <LanguageSwitcher />
 
             <Link href="/">
               <Button
                 variant="outline"
                 size="sm"
-                className="cursor-pointer font-medium border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs sm:text-sm px-2.5 sm:px-3 h-8 sm:h-9"
+                className="cursor-pointer font-medium border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs px-2.5 h-8 rounded-md"
               >
-                <ArrowLeft className="mr-1.5 size-3.5 sm:size-4" />
+                <ArrowLeft className="mr-1.5 size-3.5" />
                 <span className="hidden sm:inline">{t.nav.userPovForm}</span>
                 <span className="sm:hidden">{t.nav.userPovMobile}</span>
               </Button>
@@ -245,9 +328,9 @@ export default function AdminPage() {
                 router.push("/admin-login");
               }}
               title="Sign Out of Admin Portal"
-              className="cursor-pointer font-medium border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-rose-400 text-xs sm:text-sm px-2.5 sm:px-3 h-8 sm:h-9 transition-colors"
+              className="cursor-pointer font-medium border-zinc-800 bg-zinc-900/50 hover:bg-rose-950/30 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 text-xs px-2.5 h-8 rounded-md transition-colors"
             >
-              <LogOut className="mr-1.5 size-3.5 sm:size-4 text-rose-400" />
+              <LogOut className="mr-1.5 size-3.5 text-rose-400" />
               <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
@@ -255,26 +338,19 @@ export default function AdminPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 py-6 sm:py-10">
-        <div className="container mx-auto max-w-6xl px-4 sm:px-6 space-y-6 sm:space-y-8">
+      <main className="flex-1 py-6 sm:py-8">
+        <div className="container mx-auto max-w-6xl px-4 sm:px-6 space-y-6">
           {/* Page Title & Status */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-1">
-                <Shield className="size-3.5" />
-                <span>{t.admin.liveBadge}</span>
+              <div className="flex items-center gap-2 text-xs font-medium text-zinc-400 mb-1">
+                <span className="inline-block size-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
+                <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">{t.admin.liveBadge}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <BlurText
-                  key={language}
-                  text={t.admin.title}
-                  delay={60}
-                  animateBy="words"
-                  direction="top"
-                  className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl md:text-4xl"
-                />
-              </div>
-              <p className="mt-1 text-xs sm:text-sm text-zinc-400">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                {t.admin.title}
+              </h1>
+              <p className="mt-0.5 text-xs sm:text-sm text-zinc-400">
                 {t.admin.subtitle}
               </p>
             </div>
@@ -284,171 +360,146 @@ export default function AdminPage() {
               size="sm"
               onClick={() => refreshSubmissions()}
               disabled={submissionsLoading}
-              className="w-full sm:w-auto cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors h-9"
+              className="w-full sm:w-auto cursor-pointer border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors h-8 text-xs font-medium rounded-md"
               title={t.admin.refreshDataBtn}
             >
-              <RotateCw className={`mr-1.5 size-3.5 ${submissionsLoading ? "animate-spin" : ""}`} />
+              <RotateCw className={`mr-1.5 size-3.5 ${submissionsLoading ? "animate-spin text-emerald-400" : ""}`} />
               {t.admin.refreshDataBtn}
             </Button>
           </div>
 
-          {/* Temporary State Notice Banner */}
-          <div className="flex items-start gap-3 rounded-xl border border-emerald-500/25 bg-emerald-950/20 p-4 text-xs text-zinc-300 sm:text-sm backdrop-blur-xs">
-            <Info className="size-5 shrink-0 text-emerald-400 mt-0.5" />
-            <div className="space-y-1">
-              <p className="font-semibold text-white">{t.admin.noticeTitle}</p>
-              <p className="text-zinc-400 leading-relaxed">
+          {/* Sync / State Notice Banner */}
+          <div className="flex items-start gap-3 rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-3.5 text-xs text-zinc-400">
+            <Info className="size-4 shrink-0 text-emerald-400 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="font-semibold text-zinc-200">{t.admin.noticeTitle}</p>
+              <p className="text-zinc-400 leading-relaxed text-[11px] sm:text-xs">
                 {t.admin.noticeBody}
               </p>
             </div>
           </div>
 
-          {/* UI Action Feedback Banner */}
-          {actionFeedback && (
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-950/30 p-3.5 text-xs text-amber-200 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="size-4 text-amber-400 shrink-0" />
-                <span>
-                  <strong>{actionFeedback}:</strong> {t.admin.archiveUi.uiPreviewNotice}
+          {/* Notification Banner (Success / Error / Info) */}
+          {notification && (
+            <div
+              className={`flex items-start justify-between gap-3 rounded-lg border p-3.5 text-xs sm:text-sm animate-in fade-in slide-in-from-top-1 duration-200 ${
+                notification.type === "success"
+                  ? "border-emerald-500/30 bg-emerald-950/30 text-emerald-200"
+                  : notification.type === "error"
+                  ? "border-rose-500/30 bg-rose-950/30 text-rose-200"
+                  : "border-amber-500/30 bg-amber-950/20 text-amber-200"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                {notification.type === "success" ? (
+                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                ) : notification.type === "error" ? (
+                  <AlertTriangle className="size-4 text-rose-400 shrink-0" />
+                ) : (
+                  <Info className="size-4 text-amber-400 shrink-0" />
+                )}
+                <span className="font-medium leading-relaxed">
+                  {notification.message}
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => setActionFeedback(null)}
-                className="text-amber-400 hover:text-white cursor-pointer"
+                onClick={() => setNotification(null)}
+                className="text-zinc-400 hover:text-white cursor-pointer shrink-0 mt-0.5"
+                title="Dismiss"
               >
-                <X className="size-3.5" />
+                <X className="size-4" />
               </button>
             </div>
           )}
 
-          {/* Metrics Overview Cards (Total, Pending Verification Summary, Done) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Total Submissions Card */}
-            <Card className="border-zinc-800 bg-zinc-900/80 backdrop-blur-sm shadow-md">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                    {t.admin.totalSubmissionsTitle}
-                  </CardTitle>
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <Users className="size-4" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-black text-white tracking-tight">
-                  {totalActiveSubmissions}
-                </div>
-                <CardDescription className="text-xs text-zinc-400 mt-1">
-                  {t.admin.totalSubmissionsSub}
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            {/* Pending Verification Summary Card */}
-            <Card className="border-zinc-800 bg-zinc-900/80 backdrop-blur-sm shadow-md">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-amber-400">
-                    {t.admin.pendingCountTitle}
-                  </CardTitle>
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                    <Clock className="size-4" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-black text-amber-300 tracking-tight">
-                  {pendingCount}
-                </div>
-                <CardDescription className="text-xs text-zinc-400 mt-1">
-                  {t.admin.pendingCountSub(pendingCount)}
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            {/* Done / Verified Summary Card */}
-            <Card className="border-zinc-800 bg-zinc-900/80 backdrop-blur-sm shadow-md">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
-                    {t.admin.doneCountTitle}
-                  </CardTitle>
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <CheckCircle2 className="size-4" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-black text-emerald-400 tracking-tight">
-                  {doneCount}
-                </div>
-                <CardDescription className="text-xs text-zinc-400 mt-1">
-                  {t.admin.doneCountSub(doneCount)}
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Submissions Table / Search / Filters / Archive Section Card */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 shadow-xl overflow-hidden backdrop-blur-sm">
-            {/* Header: Title, Active/Archived View Switcher, Search Bar & Status Filters */}
-            <div className="p-4 sm:p-6 border-b border-zinc-800/80 space-y-4">
-              {/* Top Row: View Switcher (Active vs Archived UI Preview) */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-zinc-800/60">
-                <div className="inline-flex items-center rounded-xl border border-zinc-800 bg-zinc-950/90 p-1 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setAdminView("active")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                      adminView === "active"
-                        ? "bg-emerald-500 text-zinc-950 shadow-xs"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {t.admin.archiveUi.viewActiveTab} ({activeSubmissions.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAdminView("archived")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
-                      adminView === "archived"
-                        ? "bg-amber-500 text-zinc-950 shadow-xs"
-                        : "text-zinc-400 hover:text-amber-300"
-                    }`}
-                  >
-                    <Archive className="size-3.5" />
-                    <span>{t.admin.archiveUi.viewArchivedTab(archivedSubmissions.length)}</span>
-                  </button>
-                </div>
-
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-950/40 px-3 py-1 text-[11px] font-semibold text-amber-300 self-start sm:self-auto">
-                  <ShieldAlert className="size-3" />
-                  <span>{t.admin.archiveUi.uiPreviewBadge}</span>
+          {/* Metrics Overview Cards (Compact, Consistent Heights, Subtle Icons) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+            {/* 1. Total Submissions Card */}
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 sm:p-5 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+                  {t.admin.totalSubmissionsTitle}
+                </span>
+                <div className="flex size-7 items-center justify-center rounded-md bg-zinc-800/60 text-zinc-400 border border-zinc-700/40">
+                  <Users className="size-3.5" />
                 </div>
               </div>
+              <div className="mt-3">
+                <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-white font-mono">
+                  {totalActiveSubmissions}
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {t.admin.totalSubmissionsSub}
+                </p>
+              </div>
+            </div>
 
-              {/* Title and Record Count Row */}
+            {/* 2. Pending Verification Summary Card */}
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 sm:p-5 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wider text-amber-400">
+                  {t.admin.pendingCountTitle}
+                </span>
+                <div className="flex size-7 items-center justify-center rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Clock className="size-3.5" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-amber-300 font-mono">
+                  {pendingCount}
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {t.admin.pendingCountSub(pendingCount)}
+                </p>
+              </div>
+            </div>
+
+            {/* 3. Done / Verified Summary Card */}
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 sm:p-5 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wider text-emerald-400">
+                  {t.admin.doneCountTitle}
+                </span>
+                <div className="flex size-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <CheckCircle2 className="size-3.5" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-emerald-400 font-mono">
+                  {doneCount}
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {t.admin.doneCountSub(doneCount)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Submissions Records Management Section */}
+          <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 shadow-xs overflow-hidden">
+            {/* Header: Title, Description, Active/Archived Tabs, Search & Filters */}
+            <div className="p-4 sm:p-5 border-b border-zinc-800/70 space-y-4">
+              {/* Row 1: Section Title, Subtitle & Displayed Count */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
                     {adminView === "active" ? (
                       t.admin.tableCardTitle
                     ) : (
                       <>
-                        <Archive className="size-5 text-amber-400" />
+                        <Archive className="size-4 text-amber-400" />
                         <span>{t.admin.archiveUi.archivedSectionTitle}</span>
                       </>
                     )}
-                  </h3>
+                  </h2>
                   <p className="text-xs text-zinc-400 mt-0.5">
                     {adminView === "active"
                       ? t.admin.tableCardSub
                       : t.admin.archiveUi.archivedSectionSub}
                   </p>
                 </div>
-                <span className="text-xs text-zinc-400 font-mono">
+                <span className="inline-flex items-center rounded-md border border-zinc-800 bg-zinc-950/80 px-2 py-1 text-xs font-mono text-zinc-400 self-start sm:self-auto">
                   {searchTerm.trim() || statusFilter !== "ALL"
                     ? t.admin.showingResults(
                         filteredSubmissions.length,
@@ -458,29 +509,81 @@ export default function AdminPage() {
                 </span>
               </div>
 
-              {/* Customer Search Bar & Status Filter Pills */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
+              {/* Row 2: Navigation Tabs (Active Records vs Archived Records) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-zinc-800/60">
+                <div className="inline-flex items-center rounded-lg bg-zinc-950/90 p-1 border border-zinc-800/70 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setAdminView("active")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                      adminView === "active"
+                        ? "bg-zinc-800 text-white shadow-xs"
+                        : "text-zinc-400 hover:text-zinc-200"
+                    }`}
+                  >
+                    <span>{t.admin.archiveUi.viewActiveTab}</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${
+                        adminView === "active"
+                          ? "bg-emerald-500/20 text-emerald-300"
+                          : "bg-zinc-800 text-zinc-400"
+                      }`}
+                    >
+                      {activeSubmissions.length}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdminView("archived")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                      adminView === "archived"
+                        ? "bg-zinc-800 text-white shadow-xs"
+                        : "text-zinc-400 hover:text-zinc-200"
+                    }`}
+                  >
+                    <Archive className="size-3 text-amber-400" />
+                    <span>{t.admin.archiveUi.viewArchivedTab(archivedSubmissions.length).split('(')[0].trim()}</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${
+                        adminView === "archived"
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "bg-zinc-800 text-zinc-400"
+                      }`}
+                    >
+                      {archivedSubmissions.length}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-300 self-start sm:self-auto">
+                  <ShieldAlert className="size-3" />
+                  <span>{t.admin.archiveUi.uiPreviewBadge}</span>
+                </div>
+              </div>
+
+              {/* Row 3: Customer Search Bar & Status Filter Pills */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2">
                 {/* 1. Customer Search Input */}
                 <div className="relative flex-1 min-w-0 max-w-md">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
-                    <Search className="size-4" />
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-zinc-500">
+                    <Search className="size-3.5" />
                   </div>
                   <Input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder={t.admin.searchPlaceholder}
-                    className="pl-9 pr-9 h-10 w-full bg-zinc-950/80 border-zinc-800 text-white placeholder:text-zinc-500 text-sm focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-lg"
+                    className="pl-8 pr-8 h-8.5 w-full bg-zinc-950/80 border-zinc-800 text-white placeholder:text-zinc-500 text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/60 rounded-md"
                   />
                   {searchTerm && (
                     <button
                       type="button"
                       onClick={() => setSearchTerm("")}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-white cursor-pointer"
+                      className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-zinc-400 hover:text-white cursor-pointer"
                       title={t.admin.clearSearch}
                       aria-label={t.admin.clearSearch}
                     >
-                      <X className="size-4" />
+                      <X className="size-3.5" />
                     </button>
                   )}
                 </div>
@@ -494,10 +597,10 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setStatusFilter("ALL")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       statusFilter === "ALL"
-                        ? "bg-zinc-800 text-white border border-zinc-700 shadow-xs"
-                        : "bg-zinc-950/60 text-zinc-400 hover:text-white border border-zinc-800/80"
+                        ? "bg-zinc-800 text-white border border-zinc-700"
+                        : "bg-zinc-950/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80"
                     }`}
                   >
                     {t.admin.filterAll} ({currentViewList.length})
@@ -506,15 +609,15 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setStatusFilter("PENDING")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       statusFilter === "PENDING"
-                        ? "bg-amber-950/80 text-amber-300 border border-amber-500/50 shadow-xs"
-                        : "bg-zinc-950/60 text-zinc-400 hover:text-amber-300 border border-zinc-800/80"
+                        ? "bg-amber-950/60 text-amber-300 border border-amber-500/40"
+                        : "bg-zinc-950/80 text-zinc-400 hover:text-amber-300 border border-zinc-800/80"
                     }`}
                   >
-                    <Clock className="size-3 text-amber-400" />
+                    <span className="size-1.5 rounded-full bg-amber-400" />
                     <span>{t.admin.filterPending}</span>
-                    <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[10px] text-amber-300 font-mono">
+                    <span className="rounded bg-amber-500/10 px-1 py-0.2 text-[10px] text-amber-300 font-mono">
                       {currentViewList.filter((s) => !s.paymentStatus || s.paymentStatus === "Pending Verification").length}
                     </span>
                   </button>
@@ -522,15 +625,15 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setStatusFilter("DONE")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       statusFilter === "DONE"
-                        ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 shadow-xs"
-                        : "bg-zinc-950/60 text-zinc-400 hover:text-emerald-300 border border-zinc-800/80"
+                        ? "bg-emerald-950/60 text-emerald-300 border border-emerald-500/40"
+                        : "bg-zinc-950/80 text-zinc-400 hover:text-emerald-300 border border-zinc-800/80"
                     }`}
                   >
-                    <CheckCircle2 className="size-3 text-emerald-400" />
+                    <span className="size-1.5 rounded-full bg-emerald-400" />
                     <span>{t.admin.filterDone}</span>
-                    <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[10px] text-emerald-300 font-mono">
+                    <span className="rounded bg-emerald-500/10 px-1 py-0.2 text-[10px] text-emerald-300 font-mono">
                       {currentViewList.filter((s) => s.paymentStatus === "Done").length}
                     </span>
                   </button>
@@ -540,51 +643,51 @@ export default function AdminPage() {
 
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <Table className="min-w-[960px]">
-                <TableHeader className="bg-zinc-950/60 border-zinc-800">
+              <Table className="min-w-[960px] w-full text-left">
+                <TableHeader className="bg-zinc-950/60 border-b border-zinc-800/80">
                   <TableRow className="border-zinc-800/80 hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5">
                       {t.admin.table.accountName}
                     </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5">
                       {t.admin.table.phoneNumber}
                     </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5">
                       {t.admin.table.unitType}
                     </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5">
                       {t.admin.table.accountNumber}
                     </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5">
                       {t.admin.table.paymentGcash}
                     </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5">
                       {t.admin.table.address}
                     </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5">
                       {t.admin.table.note}
                     </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5">
                       {t.admin.table.submittedAt}
                     </TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-zinc-400 text-right">
+                    <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 py-3 px-3.5 text-right">
                       {t.admin.table.action}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-zinc-800/60">
+                <TableBody className="divide-y divide-zinc-800/40">
                   {submissions.length === 0 ? (
                     /* Initial empty state when no submissions exist */
                     <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={9} className="h-64 text-center">
-                        <div className="flex flex-col items-center justify-center p-8 text-center space-y-3">
-                          <div className="flex size-12 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950/80 text-zinc-400">
-                            <Inbox className="size-6 text-zinc-400" />
+                      <TableCell colSpan={9} className="h-56 text-center">
+                        <div className="flex flex-col items-center justify-center p-6 text-center space-y-2.5">
+                          <div className="flex size-10 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-400">
+                            <Inbox className="size-5 text-zinc-400" />
                           </div>
                           <div className="space-y-1 max-w-sm">
-                            <h4 className="text-base font-bold text-white">
+                            <h3 className="text-sm font-semibold text-white">
                               {t.admin.emptyTitle}
-                            </h4>
+                            </h3>
                             <p className="text-xs text-zinc-400 leading-relaxed">
                               {t.admin.emptyBody}
                             </p>
@@ -592,7 +695,7 @@ export default function AdminPage() {
                           <Link href="/">
                             <Button
                               size="sm"
-                              className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-1"
+                              className="cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs h-8 px-3 mt-1"
                             >
                               {t.admin.goToUserPovBtn}
                             </Button>
@@ -603,15 +706,15 @@ export default function AdminPage() {
                   ) : adminView === "archived" && archivedSubmissions.length === 0 ? (
                     /* Archived section empty state */
                     <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={9} className="h-64 text-center">
-                        <div className="flex flex-col items-center justify-center p-8 text-center space-y-3">
-                          <div className="flex size-12 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-950/30 text-amber-400">
-                            <Archive className="size-6" />
+                      <TableCell colSpan={9} className="h-56 text-center">
+                        <div className="flex flex-col items-center justify-center p-6 text-center space-y-2.5">
+                          <div className="flex size-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-950/20 text-amber-400">
+                            <Archive className="size-5" />
                           </div>
                           <div className="space-y-1 max-w-sm">
-                            <h4 className="text-base font-bold text-white">
+                            <h3 className="text-sm font-semibold text-white">
                               {t.admin.archiveUi.archivedEmptyTitle}
-                            </h4>
+                            </h3>
                             <p className="text-xs text-zinc-400 leading-relaxed">
                               {t.admin.archiveUi.archivedEmptyBody}
                             </p>
@@ -620,7 +723,7 @@ export default function AdminPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => setAdminView("active")}
-                            className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 text-xs mt-1"
+                            className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 text-xs h-8 px-3 rounded-md mt-1"
                           >
                             {t.admin.archiveUi.viewActiveTab}
                           </Button>
@@ -630,15 +733,15 @@ export default function AdminPage() {
                   ) : filteredSubmissions.length === 0 ? (
                     /* Empty search/filter state */
                     <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={9} className="h-64 text-center">
-                        <div className="flex flex-col items-center justify-center p-8 text-center space-y-3">
-                          <div className="flex size-12 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950/80 text-zinc-400">
-                            <Search className="size-6 text-zinc-400" />
+                      <TableCell colSpan={9} className="h-56 text-center">
+                        <div className="flex flex-col items-center justify-center p-6 text-center space-y-2.5">
+                          <div className="flex size-10 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-400">
+                            <Search className="size-5 text-zinc-400" />
                           </div>
                           <div className="space-y-1 max-w-sm">
-                            <h4 className="text-base font-bold text-white">
+                            <h3 className="text-sm font-semibold text-white">
                               {t.admin.noSearchResultsTitle}
-                            </h4>
+                            </h3>
                             <p className="text-xs text-zinc-400 leading-relaxed">
                               {t.admin.noSearchResultsBody(searchTerm)}
                             </p>
@@ -648,7 +751,7 @@ export default function AdminPage() {
                               <Button
                                 size="sm"
                                 onClick={() => setSearchTerm("")}
-                                className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                                className="cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs h-8 px-2.5"
                               >
                                 <X className="mr-1.5 size-3.5" />
                                 {t.admin.clearSearchBtn}
@@ -659,7 +762,7 @@ export default function AdminPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setStatusFilter("ALL")}
-                                className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200"
+                                className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 text-xs h-8 px-2.5 rounded-md"
                               >
                                 {t.admin.filterAll}
                               </Button>
@@ -674,58 +777,58 @@ export default function AdminPage() {
                       return (
                         <TableRow
                           key={sub.id}
-                          className="border-zinc-800/60 hover:bg-zinc-950/40 transition-colors"
+                          className="border-zinc-800/40 hover:bg-zinc-800/20 transition-colors"
                         >
-                          <TableCell className="font-semibold text-white whitespace-nowrap">
+                          <TableCell className="font-medium text-white whitespace-nowrap text-xs px-3.5 py-3">
                             {sub.name}
                           </TableCell>
-                          <TableCell className="text-zinc-300 font-mono text-xs whitespace-nowrap">
+                          <TableCell className="text-zinc-300 font-mono text-xs whitespace-nowrap px-3.5 py-3">
                             {sub.phoneNumber}
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
-                              <Radio className="size-3" />
+                          <TableCell className="whitespace-nowrap px-3.5 py-3">
+                            <span className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+                              <Radio className="size-2.5" />
                               {sub.unitType}
                             </span>
                           </TableCell>
-                          <TableCell className="font-mono text-xs text-emerald-400 font-semibold whitespace-nowrap">
+                          <TableCell className="font-mono text-xs text-zinc-200 font-medium whitespace-nowrap px-3.5 py-3">
                             {sub.receiverNumber}
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <div className="flex flex-col text-xs gap-1">
+                          <TableCell className="whitespace-nowrap px-3.5 py-3">
+                            <div className="flex flex-col text-xs gap-0.5">
                               <div className="flex items-center gap-1.5 font-medium text-white">
-                                <span className="font-bold text-emerald-400 font-mono text-sm">
+                                <span className="font-semibold text-emerald-400 font-mono text-xs">
                                   {sub.paymentAmount || "—"}
                                 </span>
                                 {sub.packageDescription && (
                                   <span
-                                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                                    className={`inline-flex items-center rounded px-1.5 py-0.2 text-[10px] font-medium border ${
                                       sub.packageDescription === "All Channels"
-                                        ? "border-emerald-500/40 bg-emerald-950/80 text-emerald-300"
-                                        : "border-zinc-700 bg-zinc-800/80 text-zinc-300"
+                                        ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-300"
+                                        : "border-zinc-800 bg-zinc-850 text-zinc-400"
                                     }`}
                                   >
                                     {sub.packageDescription}
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[11px] text-zinc-400 font-mono">
+                              <span className="text-[10px] text-zinc-400 font-mono">
                                 Ref: {sub.gcashReferenceNumber || "—"}
                               </span>
                             </div>
                           </TableCell>
                           <TableCell
-                            className="text-zinc-300 max-w-xs truncate text-xs"
+                            className="text-zinc-300 max-w-[180px] truncate text-xs px-3.5 py-3"
                             title={sub.address}
                           >
                             {sub.address}
                           </TableCell>
                           <TableCell
-                            className="text-zinc-300 max-w-xs text-xs"
+                            className="text-zinc-300 max-w-[160px] text-xs px-3.5 py-3"
                             title={sub.note || undefined}
                           >
                             {sub.note && sub.note.trim() ? (
-                              <span className="text-zinc-300 break-words line-clamp-2">
+                              <span className="text-zinc-300 break-words line-clamp-1">
                                 {sub.note}
                               </span>
                             ) : (
@@ -734,22 +837,22 @@ export default function AdminPage() {
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="text-zinc-400 text-xs whitespace-nowrap">
+                          <TableCell className="text-zinc-400 text-xs whitespace-nowrap font-mono px-3.5 py-3">
                             {sub.submittedAt}
                           </TableCell>
                           {/* Actions Column: Verification, Archive, Restore & Permanent Delete */}
-                          <TableCell className="text-right whitespace-nowrap">
+                          <TableCell className="text-right whitespace-nowrap px-3.5 py-3">
                             <div className="flex flex-col items-end gap-1.5">
                               {/* Status Badges */}
                               <div className="flex items-center gap-1.5">
                                 {isDone ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/70 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
-                                    <CheckCircle2 className="size-3 text-emerald-400" />
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+                                    <span className="size-1.5 rounded-full bg-emerald-400" />
                                     <span>{t.admin.doneStatus}</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-950/70 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
-                                    <Clock className="size-3 text-amber-400" />
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300">
+                                    <span className="size-1.5 rounded-full bg-amber-400" />
                                     <span>{t.admin.pendingStatus}</span>
                                   </span>
                                 )}
@@ -762,7 +865,7 @@ export default function AdminPage() {
                                     type="button"
                                     size="sm"
                                     onClick={() => updatePaymentStatus(sub.id, "Done")}
-                                    className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_10px_rgba(16,185,129,0.3)] h-7 px-2 text-xs transition-transform active:scale-95"
+                                    className="cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white h-7 px-2 text-xs rounded-md transition-colors"
                                     title={t.admin.markAsDoneBtn}
                                   >
                                     <Check className="mr-1 size-3" />
@@ -776,19 +879,19 @@ export default function AdminPage() {
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => openDialog("archive", sub)}
-                                      className="cursor-pointer border-amber-500/30 bg-amber-950/30 hover:bg-amber-900/50 text-amber-300 h-7 px-2 text-xs"
+                                      onClick={() => openArchiveDialog("archive", sub)}
+                                      className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 h-7 px-2 text-xs rounded-md"
                                       title={t.admin.archiveUi.archiveBtn}
                                     >
-                                      <Archive className="mr-1 size-3" />
+                                      <Archive className="mr-1 size-3 text-amber-400" />
                                       <span>{t.admin.archiveUi.archiveBtn}</span>
                                     </Button>
                                     <Button
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => openDialog("delete", sub)}
-                                      className="cursor-pointer border-zinc-700 bg-zinc-800/50 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs transition-colors"
+                                      onClick={() => openDeleteDialog(sub)}
+                                      className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-rose-950/40 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs rounded-md transition-colors"
                                       title={t.admin.archiveUi.deleteBtn}
                                     >
                                       <Trash2 className="size-3" />
@@ -799,8 +902,8 @@ export default function AdminPage() {
                                     <Button
                                       type="button"
                                       size="sm"
-                                      onClick={() => openDialog("restore", sub)}
-                                      className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 h-7 px-2 text-xs shadow-xs"
+                                      onClick={() => openArchiveDialog("restore", sub)}
+                                      className="cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white h-7 px-2.5 text-xs rounded-md transition-colors"
                                       title={t.admin.archiveUi.restoreBtn}
                                     >
                                       <RotateCcw className="mr-1 size-3" />
@@ -810,8 +913,8 @@ export default function AdminPage() {
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => openDialog("delete", sub)}
-                                      className="cursor-pointer border-zinc-700 bg-zinc-800/50 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs transition-colors"
+                                      onClick={() => openDeleteDialog(sub)}
+                                      className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-rose-950/40 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs rounded-md transition-colors"
                                       title={t.admin.archiveUi.deleteBtn}
                                     >
                                       <Trash2 className="size-3" />
@@ -833,14 +936,14 @@ export default function AdminPage() {
             <div className="md:hidden">
               {submissions.length === 0 ? (
                 /* Initial empty state when no submissions exist */
-                <div className="flex flex-col items-center justify-center p-10 text-center space-y-3">
-                  <div className="flex size-12 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950/80 text-zinc-400">
-                    <Inbox className="size-6 text-zinc-400" />
+                <div className="flex flex-col items-center justify-center p-8 text-center space-y-2.5">
+                  <div className="flex size-10 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-400">
+                    <Inbox className="size-5 text-zinc-400" />
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-base font-bold text-white">
+                    <h3 className="text-sm font-semibold text-white">
                       {t.admin.emptyTitle}
-                    </h4>
+                    </h3>
                     <p className="text-xs text-zinc-400 leading-relaxed">
                       {t.admin.emptyBody}
                     </p>
@@ -848,7 +951,7 @@ export default function AdminPage() {
                   <Link href="/">
                     <Button
                       size="sm"
-                      className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-1"
+                      className="cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs h-8 px-3 mt-1"
                     >
                       {t.admin.goToUserPovBtn}
                     </Button>
@@ -856,14 +959,14 @@ export default function AdminPage() {
                 </div>
               ) : adminView === "archived" && archivedSubmissions.length === 0 ? (
                 /* Archived section empty state on mobile */
-                <div className="flex flex-col items-center justify-center p-8 text-center space-y-3">
-                  <div className="flex size-12 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-950/30 text-amber-400">
-                    <Archive className="size-6" />
+                <div className="flex flex-col items-center justify-center p-8 text-center space-y-2.5">
+                  <div className="flex size-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-950/20 text-amber-400">
+                    <Archive className="size-5" />
                   </div>
                   <div className="space-y-1 max-w-sm">
-                    <h4 className="text-base font-bold text-white">
+                    <h3 className="text-sm font-semibold text-white">
                       {t.admin.archiveUi.archivedEmptyTitle}
-                    </h4>
+                    </h3>
                     <p className="text-xs text-zinc-400 leading-relaxed">
                       {t.admin.archiveUi.archivedEmptyBody}
                     </p>
@@ -872,21 +975,21 @@ export default function AdminPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => setAdminView("active")}
-                    className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 text-xs mt-1"
+                    className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 text-xs h-8 px-3 rounded-md mt-1"
                   >
                     {t.admin.archiveUi.viewActiveTab}
                   </Button>
                 </div>
               ) : filteredSubmissions.length === 0 ? (
                 /* Empty search/filter state on mobile */
-                <div className="flex flex-col items-center justify-center p-8 text-center space-y-3">
-                  <div className="flex size-12 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-950/80 text-zinc-400">
-                    <Search className="size-6 text-zinc-400" />
+                <div className="flex flex-col items-center justify-center p-8 text-center space-y-2.5">
+                  <div className="flex size-10 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-400">
+                    <Search className="size-5 text-zinc-400" />
                   </div>
                   <div className="space-y-1 max-w-sm">
-                    <h4 className="text-base font-bold text-white">
+                    <h3 className="text-sm font-semibold text-white">
                       {t.admin.noSearchResultsTitle}
-                    </h4>
+                    </h3>
                     <p className="text-xs text-zinc-400 leading-relaxed">
                       {t.admin.noSearchResultsBody(searchTerm)}
                     </p>
@@ -896,7 +999,7 @@ export default function AdminPage() {
                       <Button
                         size="sm"
                         onClick={() => setSearchTerm("")}
-                        className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                        className="cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs h-8 px-2.5"
                       >
                         <X className="mr-1.5 size-3.5" />
                         {t.admin.clearSearchBtn}
@@ -907,7 +1010,7 @@ export default function AdminPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => setStatusFilter("ALL")}
-                        className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200"
+                        className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 text-xs h-8 px-2.5 rounded-md"
                       >
                         {t.admin.filterAll}
                       </Button>
@@ -915,18 +1018,18 @@ export default function AdminPage() {
                   </div>
                 </div>
               ) : (
-                <div className="divide-y divide-zinc-800/80">
+                <div className="divide-y divide-zinc-800/60">
                   {filteredSubmissions.map((sub) => {
                     const isDone = sub.paymentStatus === "Done";
                     return (
-                      <div key={sub.id} className="p-4 space-y-3.5 bg-zinc-950/30">
+                      <div key={sub.id} className="p-4 space-y-3 bg-zinc-950/20">
                         {/* Card Header: Customer Name, Phone, Unit Type & Status Badges */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">
+                            <span className="text-zinc-500 block text-[10px] uppercase font-medium">
                               {t.admin.mobile.accountName}
                             </span>
-                            <div className="font-bold text-white text-base break-words">
+                            <div className="font-semibold text-white text-sm break-words">
                               {sub.name}
                             </div>
                             <div className="flex items-center gap-1 text-xs text-zinc-400 font-mono mt-0.5">
@@ -940,19 +1043,19 @@ export default function AdminPage() {
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-1.5 shrink-0">
-                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
+                            <span className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-950 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
                               <Radio className="size-2.5" />
                               {sub.unitType}
                             </span>
                             <div className="flex items-center gap-1 flex-wrap justify-end">
                               {isDone ? (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 bg-emerald-950/70 border border-emerald-500/30 rounded-full px-2 py-0.5">
-                                  <CheckCircle2 className="size-3 text-emerald-400" />
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-full px-2 py-0.5">
+                                  <span className="size-1.5 rounded-full bg-emerald-400" />
                                   {t.admin.doneStatus}
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 bg-amber-950/70 border border-amber-500/30 rounded-full px-2 py-0.5">
-                                  <Clock className="size-3 text-amber-400" />
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-300 bg-amber-500/10 border border-amber-500/25 rounded-full px-2 py-0.5">
+                                  <span className="size-1.5 rounded-full bg-amber-400" />
                                   {t.admin.pendingStatus}
                                 </span>
                               )}
@@ -963,18 +1066,18 @@ export default function AdminPage() {
                         {/* Account Number & Time */}
                         <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-zinc-800/40">
                           <div>
-                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">
+                            <span className="text-zinc-500 block text-[10px] uppercase font-medium">
                               {t.admin.mobile.accountNumber}
                             </span>
-                            <span className="font-mono text-emerald-400 font-semibold break-all text-xs sm:text-sm">
+                            <span className="font-mono text-zinc-200 font-medium break-all text-xs">
                               {sub.receiverNumber}
                             </span>
                           </div>
                           <div>
-                            <span className="text-zinc-500 block text-[10px] uppercase font-semibold">
+                            <span className="text-zinc-500 block text-[10px] uppercase font-medium">
                               {t.admin.mobile.time}
                             </span>
-                            <span className="text-zinc-400 flex items-center gap-1 text-[11px] break-words">
+                            <span className="text-zinc-400 flex items-center gap-1 text-[11px] font-mono break-words">
                               <Clock className="size-3 text-zinc-500 shrink-0" />
                               {sub.submittedAt}
                             </span>
@@ -983,27 +1086,27 @@ export default function AdminPage() {
 
                         {/* Payment Details */}
                         <div className="text-xs pt-1 border-t border-zinc-800/40 space-y-1">
-                          <span className="text-zinc-500 text-[10px] uppercase font-semibold block">
+                          <span className="text-zinc-500 text-[10px] uppercase font-medium block">
                             {t.admin.mobile.paymentGcash}
                           </span>
                           <div className="flex items-center justify-between flex-wrap gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-emerald-400 font-mono text-sm">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-emerald-400 font-mono text-xs">
                                 {sub.paymentAmount || "—"}
                               </span>
                               {sub.packageDescription && (
                                 <span
-                                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                                  className={`inline-flex items-center rounded px-1.5 py-0.2 text-[10px] font-medium border ${
                                     sub.packageDescription === "All Channels"
-                                      ? "border-emerald-500/40 bg-emerald-950/80 text-emerald-300"
-                                      : "border-zinc-700 bg-zinc-800/80 text-zinc-300"
+                                      ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-300"
+                                      : "border-zinc-800 bg-zinc-850 text-zinc-400"
                                     }`}
                                 >
                                   {sub.packageDescription}
                                 </span>
                               )}
                             </div>
-                            <span className="text-zinc-300 font-mono text-[11px] break-all">
+                            <span className="text-zinc-400 font-mono text-[10px] break-all">
                               Ref: {sub.gcashReferenceNumber || "—"}
                             </span>
                           </div>
@@ -1011,7 +1114,7 @@ export default function AdminPage() {
 
                         {/* Address */}
                         <div className="text-xs pt-1 border-t border-zinc-800/40">
-                          <span className="text-zinc-500 block text-[10px] uppercase font-semibold">
+                          <span className="text-zinc-500 block text-[10px] uppercase font-medium">
                             {t.admin.mobile.address}
                           </span>
                           <span className="text-zinc-300 break-words text-xs">
@@ -1021,11 +1124,11 @@ export default function AdminPage() {
 
                         {/* Note */}
                         <div className="text-xs pt-1 border-t border-zinc-800/40">
-                          <span className="text-zinc-500 block text-[10px] uppercase font-semibold">
+                          <span className="text-zinc-500 block text-[10px] uppercase font-medium">
                             {t.admin.mobile.note}
                           </span>
                           {sub.note && sub.note.trim() ? (
-                            <div className="rounded-lg bg-zinc-900/80 border border-zinc-800/80 p-2.5 mt-1 text-zinc-200 break-words whitespace-pre-wrap text-xs">
+                            <div className="rounded-md bg-zinc-900/60 border border-zinc-800/80 p-2 mt-1 text-zinc-300 break-words whitespace-pre-wrap text-xs">
                               {sub.note}
                             </div>
                           ) : (
@@ -1041,9 +1144,9 @@ export default function AdminPage() {
                             <Button
                               type="button"
                               onClick={() => updatePaymentStatus(sub.id, "Done")}
-                              className="w-full cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] h-11 sm:h-10 text-xs sm:text-sm transition-transform active:scale-[0.98] focus-visible:ring-emerald-500/50"
+                              className="w-full cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white h-8 text-xs rounded-md transition-colors"
                             >
-                              <Check className="mr-1.5 size-4" />
+                              <Check className="mr-1.5 size-3.5" />
                               {t.admin.markAsDoneBtn}
                             </Button>
                           )}
@@ -1054,17 +1157,17 @@ export default function AdminPage() {
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  onClick={() => openDialog("archive", sub)}
-                                  className="flex-1 cursor-pointer border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-amber-500/50"
+                                  onClick={() => openArchiveDialog("archive", sub)}
+                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 h-8 text-xs rounded-md font-medium"
                                 >
-                                  <Archive className="mr-1.5 size-3.5" />
+                                  <Archive className="mr-1.5 size-3.5 text-amber-400" />
                                   {t.admin.archiveUi.archiveBtn}
                                 </Button>
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  onClick={() => openDialog("delete", sub)}
-                                  className="flex-1 cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-rose-500/50 transition-colors"
+                                  onClick={() => openDeleteDialog(sub)}
+                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-rose-950/40 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 h-8 text-xs rounded-md font-medium transition-colors"
                                 >
                                   <Trash2 className="mr-1.5 size-3.5" />
                                   {t.admin.archiveUi.deleteBtn}
@@ -1074,8 +1177,8 @@ export default function AdminPage() {
                               <>
                                 <Button
                                   type="button"
-                                  onClick={() => openDialog("restore", sub)}
-                                  className="flex-1 cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 h-10 sm:h-9 text-xs focus-visible:ring-emerald-500/50"
+                                  onClick={() => openArchiveDialog("restore", sub)}
+                                  className="flex-1 cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white h-8 text-xs rounded-md transition-colors"
                                 >
                                   <RotateCcw className="mr-1.5 size-3.5" />
                                   {t.admin.archiveUi.restoreBtn}
@@ -1083,8 +1186,8 @@ export default function AdminPage() {
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  onClick={() => openDialog("delete", sub)}
-                                  className="flex-1 cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-rose-500/50 transition-colors"
+                                  onClick={() => openDeleteDialog(sub)}
+                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-rose-950/40 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 h-8 text-xs rounded-md font-medium transition-colors"
                                 >
                                   <Trash2 className="mr-1.5 size-3.5" />
                                   {t.admin.archiveUi.deleteBtn}
@@ -1103,52 +1206,39 @@ export default function AdminPage() {
         </div>
       </main>
 
-      {/* Confirmation Dialog Modal for Archive, Restore, and Permanent Delete */}
-      <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && !isProcessingAction && closeDialog()}>
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-2xl max-h-[88dvh] overflow-y-auto overscroll-contain">
-          <DialogHeader className="gap-2">
+      {/* Permanent Delete Confirmation Dialog (Yes/No Confirmation) */}
+      <AlertDialog
+        open={deleteDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open && !isProcessingDelete) {
+            closeDeleteDialog();
+          }
+        }}
+      >
+        <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-5 sm:p-6 shadow-xl rounded-xl">
+          <AlertDialogHeader className="gap-1.5">
             <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
-                  confirmDialog.action === "delete"
-                    ? "border-rose-500/40 bg-rose-950/60 text-rose-300"
-                    : confirmDialog.action === "archive"
-                    ? "border-amber-500/40 bg-amber-950/60 text-amber-300"
-                    : "border-emerald-500/40 bg-emerald-950/60 text-emerald-300"
-                }`}
-              >
-                <ShieldAlert className="size-3" />
-                {confirmDialog.action === "delete"
-                  ? "Permanent Deletion"
-                  : confirmDialog.action === "archive"
-                  ? "Archive Record"
-                  : "Restore Record"}
+              <span className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-950/40 px-2 py-0.5 text-[10px] font-medium text-rose-300">
+                <AlertTriangle className="size-3 text-rose-400" />
+                Permanent Deletion
               </span>
             </div>
-            <DialogTitle className="text-lg font-bold text-white">
-              {confirmDialog.action === "archive"
-                ? t.admin.archiveUi.confirmDialog.archiveTitle
-                : confirmDialog.action === "restore"
-                ? t.admin.archiveUi.confirmDialog.restoreTitle
-                : t.admin.archiveUi.confirmDialog.deleteTitle}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400 leading-relaxed">
-              {confirmDialog.action === "archive"
-                ? t.admin.archiveUi.confirmDialog.archiveDesc
-                : confirmDialog.action === "restore"
-                ? t.admin.archiveUi.confirmDialog.restoreDesc
-                : t.admin.archiveUi.confirmDialog.deleteDesc}
-            </DialogDescription>
-          </DialogHeader>
+            <AlertDialogTitle className="text-base sm:text-lg font-bold text-white">
+              {t.admin.archiveUi.confirmDialog.deleteTitle}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+              {t.admin.archiveUi.confirmDialog.deleteDesc}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
-          {confirmDialog.record && (
-            <div className="my-2 rounded-xl border border-zinc-800/90 bg-zinc-900/70 p-3.5 space-y-2 text-xs">
+          {deleteDialog.record && (
+            <div className="my-2 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-400">
                   {t.admin.archiveUi.confirmDialog.customerLabel}
                 </span>
                 <span className="font-semibold text-white">
-                  {confirmDialog.record.name}
+                  {deleteDialog.record.name}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -1156,7 +1246,7 @@ export default function AdminPage() {
                   {t.admin.archiveUi.confirmDialog.unitLabel}
                 </span>
                 <span className="font-medium text-emerald-400">
-                  {confirmDialog.record.unitType}
+                  {deleteDialog.record.unitType}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -1164,59 +1254,151 @@ export default function AdminPage() {
                   {t.admin.archiveUi.confirmDialog.accountLabel}
                 </span>
                 <span className="font-mono text-zinc-200">
-                  {confirmDialog.record.receiverNumber}
+                  {deleteDialog.record.receiverNumber}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-400">
                   {t.admin.archiveUi.confirmDialog.amountLabel}
                 </span>
-                <span className="font-mono font-bold text-white">
-                  {confirmDialog.record.paymentAmount}
+                <span className="font-mono font-semibold text-emerald-400">
+                  {deleteDialog.record.paymentAmount}
                 </span>
               </div>
             </div>
           )}
 
-          <div
-            className={`rounded-lg border p-2.5 text-[11px] ${
-              confirmDialog.action === "delete"
-                ? "border-rose-500/30 bg-rose-950/20 text-rose-200"
-                : "border-amber-500/25 bg-amber-950/20 text-amber-200/90"
-            }`}
-          >
-            <p>
-              {confirmDialog.action === "delete"
-                ? t.admin.archiveUi.confirmDialog.deleteWarningNote
-                : t.admin.archiveUi.confirmDialog.warningNote}
-            </p>
+          <div className="rounded-md border border-rose-500/20 bg-rose-950/20 p-2.5 text-[11px] text-rose-300/90 leading-relaxed">
+            <p>{t.admin.archiveUi.confirmDialog.deleteWarningNote}</p>
           </div>
 
-          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2 border-t border-zinc-800">
+          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-3 border-t border-zinc-800/80">
+            <AlertDialogCancel
+              disabled={isProcessingDelete}
+              onClick={closeDeleteDialog}
+              className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 h-8.5 text-xs rounded-md"
+            >
+              {t.admin.archiveUi.confirmDialog.cancelBtn}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isProcessingDelete}
+              onClick={handlePermanentDelete}
+              className="cursor-pointer font-medium bg-rose-600 hover:bg-rose-500 text-white h-8.5 text-xs rounded-md shadow-xs"
+            >
+              {isProcessingDelete ? (
+                <>
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                  <span>{t.admin.archiveUi.confirmDialog.deletingBtn}</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-1.5 size-3.5" />
+                  <span>{t.admin.archiveUi.confirmDialog.yesDeleteBtn}</span>
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive and Restore Confirmation Dialog (Separate from Permanent Deletion) */}
+      <Dialog
+        open={archiveDialog.isOpen}
+        onOpenChange={(open) => {
+          if (!open && !isProcessingArchive) {
+            closeArchiveDialog();
+          }
+        }}
+      >
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-xl rounded-xl max-h-[88dvh] overflow-y-auto overscroll-contain">
+          <DialogHeader className="gap-1.5">
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${
+                  archiveDialog.action === "archive"
+                    ? "border-amber-500/30 bg-amber-950/40 text-amber-300"
+                    : "border-emerald-500/30 bg-emerald-950/40 text-emerald-300"
+                }`}
+              >
+                <ShieldAlert className="size-3" />
+                {archiveDialog.action === "archive" ? "Archive Record" : "Restore Record"}
+              </span>
+            </div>
+            <DialogTitle className="text-base sm:text-lg font-bold text-white">
+              {archiveDialog.action === "archive"
+                ? t.admin.archiveUi.confirmDialog.archiveTitle
+                : t.admin.archiveUi.confirmDialog.restoreTitle}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400 leading-relaxed">
+              {archiveDialog.action === "archive"
+                ? t.admin.archiveUi.confirmDialog.archiveDesc
+                : t.admin.archiveUi.confirmDialog.restoreDesc}
+            </DialogDescription>
+          </DialogHeader>
+
+          {archiveDialog.record && (
+            <div className="my-2 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">
+                  {t.admin.archiveUi.confirmDialog.customerLabel}
+                </span>
+                <span className="font-semibold text-white">
+                  {archiveDialog.record.name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">
+                  {t.admin.archiveUi.confirmDialog.unitLabel}
+                </span>
+                <span className="font-medium text-emerald-400">
+                  {archiveDialog.record.unitType}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">
+                  {t.admin.archiveUi.confirmDialog.accountLabel}
+                </span>
+                <span className="font-mono text-zinc-200">
+                  {archiveDialog.record.receiverNumber}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">
+                  {t.admin.archiveUi.confirmDialog.amountLabel}
+                </span>
+                <span className="font-mono font-semibold text-emerald-400">
+                  {archiveDialog.record.paymentAmount}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-md border border-amber-500/20 bg-amber-950/20 p-2.5 text-[11px] text-amber-300/90 leading-relaxed">
+            <p>{t.admin.archiveUi.confirmDialog.warningNote}</p>
+          </div>
+
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2 border-t border-zinc-800/80">
             <Button
               type="button"
               variant="outline"
-              onClick={closeDialog}
-              disabled={isProcessingAction}
-              className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-300 h-9 text-xs"
+              onClick={closeArchiveDialog}
+              disabled={isProcessingArchive}
+              className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 h-8.5 text-xs rounded-md"
             >
               {t.admin.archiveUi.confirmDialog.cancelBtn}
             </Button>
             <Button
               type="button"
-              onClick={handleConfirmAction}
-              disabled={isProcessingAction}
-              className={`cursor-pointer font-semibold h-9 text-xs shadow-md ${
-                confirmDialog.action === "delete"
-                  ? "bg-rose-600 hover:bg-rose-500 text-white"
-                  : confirmDialog.action === "archive"
-                  ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
-                  : "bg-emerald-500 hover:bg-emerald-400 text-zinc-950"
+              onClick={handleConfirmArchive}
+              disabled={isProcessingArchive}
+              className={`cursor-pointer font-medium h-8.5 text-xs rounded-md shadow-xs ${
+                archiveDialog.action === "archive"
+                  ? "bg-amber-600 hover:bg-amber-500 text-white"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white"
               }`}
             >
-              {confirmDialog.action === "delete"
-                ? t.admin.archiveUi.confirmDialog.confirmDeleteBtn
-                : confirmDialog.action === "archive"
+              {isProcessingArchive && <Loader2 className="mr-1.5 size-3.5 animate-spin" />}
+              {archiveDialog.action === "archive"
                 ? t.admin.archiveUi.confirmDialog.confirmArchiveBtn
                 : t.admin.archiveUi.confirmDialog.confirmRestoreBtn}
             </Button>
@@ -1225,13 +1407,13 @@ export default function AdminPage() {
       </Dialog>
 
       {/* Admin Footer */}
-      <footer className="border-t border-zinc-800/80 bg-[#060807] py-6 text-center text-xs text-zinc-500">
+      <footer className="border-t border-zinc-800/70 bg-zinc-950 py-5 text-center text-xs text-zinc-500">
         <div className="container mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-zinc-300 font-semibold">
-            <Tv className="size-4 text-emerald-400" />
+          <div className="flex items-center gap-2 text-zinc-400 font-medium">
+            <Tv className="size-3.5 text-emerald-400" />
             <span>{t.admin.footerTitle}</span>
           </div>
-          <p className="text-[11px]">
+          <p className="text-[11px] text-zinc-500">
             {t.admin.footerSubtitle}
           </p>
         </div>

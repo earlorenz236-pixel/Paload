@@ -43,7 +43,7 @@ import {
 
 interface ConfirmDialogState {
   isOpen: boolean;
-  action: "archive" | "soft-delete" | "restore";
+  action: "archive" | "restore";
   record: Submission | null;
 }
 
@@ -56,14 +56,13 @@ export function SubmissionHistory() {
   const isLoading = submissionsLoading || authLoading;
 
   const [historyView, setHistoryView] = useState<"active" | "archived">("active");
-  const [previewArchivedIds, setPreviewArchivedIds] = useState<Set<string>>(new Set());
-  const [previewSoftDeletedIds, setPreviewSoftDeletedIds] = useState<Set<string>>(new Set());
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     isOpen: false,
     action: "archive",
     record: null,
   });
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [isProcessingAction, setIsProcessingAction] = useState<boolean>(false);
 
   const scrollToForm = () => {
     const el = document.getElementById("info-form");
@@ -87,21 +86,21 @@ export function SubmissionHistory() {
     return status;
   };
 
-  // Segregated active vs archived submissions based on database state and UI preview
+  // Segregated active vs archived submissions based on database archivedAt
   const activeSubmissions = useMemo(
-    () => submissions.filter((s) => !previewArchivedIds.has(s.id) && !s.archivedAt),
-    [submissions, previewArchivedIds]
+    () => submissions.filter((s) => !s.archivedAt),
+    [submissions]
   );
 
   const archivedSubmissions = useMemo(
-    () => submissions.filter((s) => previewArchivedIds.has(s.id) || !!s.archivedAt),
-    [submissions, previewArchivedIds]
+    () => submissions.filter((s) => !!s.archivedAt),
+    [submissions]
   );
 
   const currentViewList = historyView === "active" ? activeSubmissions : archivedSubmissions;
 
   const openDialog = (
-    action: "archive" | "soft-delete" | "restore",
+    action: "archive" | "restore",
     record: Submission
   ) => {
     setConfirmDialog({
@@ -119,36 +118,32 @@ export function SubmissionHistory() {
     });
   };
 
-  const handleConfirmAction = () => {
+  const handleConfirmAction = async () => {
     if (!confirmDialog.record) return;
     const recId = confirmDialog.record.id;
+    setIsProcessingAction(true);
 
-    if (confirmDialog.action === "archive") {
-      archiveSubmission?.(recId, true);
-      setPreviewArchivedIds((prev) => new Set([...prev, recId]));
-      setActionFeedback(t.history.archiveUi.confirmDialog.archiveTitle);
-    } else if (confirmDialog.action === "soft-delete") {
-      archiveSubmission?.(recId, true);
-      setPreviewSoftDeletedIds((prev) => new Set([...prev, recId]));
-      setPreviewArchivedIds((prev) => new Set([...prev, recId]));
-      setActionFeedback(t.history.archiveUi.confirmDialog.softDeleteTitle);
-    } else if (confirmDialog.action === "restore") {
-      archiveSubmission?.(recId, false);
-      setPreviewArchivedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(recId);
-        return next;
-      });
-      setPreviewSoftDeletedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(recId);
-        return next;
-      });
-      setActionFeedback(t.history.archiveUi.confirmDialog.restoreTitle);
+    try {
+      if (confirmDialog.action === "archive") {
+        const res = await archiveSubmission?.(recId, true);
+        if (res?.success) {
+          setActionFeedback(t.history.archiveUi.confirmDialog.archiveTitle);
+        } else {
+          setActionFeedback(res?.error || "Failed to archive record");
+        }
+      } else if (confirmDialog.action === "restore") {
+        const res = await archiveSubmission?.(recId, false);
+        if (res?.success) {
+          setActionFeedback(t.history.archiveUi.confirmDialog.restoreTitle);
+        } else {
+          setActionFeedback(res?.error || "Failed to restore record");
+        }
+      }
+    } finally {
+      setIsProcessingAction(false);
+      closeDialog();
+      setTimeout(() => setActionFeedback(null), 4000);
     }
-
-    closeDialog();
-    setTimeout(() => setActionFeedback(null), 4000);
   };
 
   return (
@@ -392,7 +387,6 @@ export function SubmissionHistory() {
                 ) : (
                   currentViewList.map((sub) => {
                     const isDone = sub.paymentStatus === "Done";
-                    const isSoftDeleted = previewSoftDeletedIds.has(sub.id);
                     return (
                       <TableRow
                         key={sub.id}
@@ -447,65 +441,34 @@ export function SubmissionHistory() {
                                 {formatStatus(sub.paymentStatus)}
                               </span>
                             )}
-                            {isSoftDeleted && (
-                              <span className="inline-flex items-center rounded bg-rose-950/70 border border-rose-500/40 px-1.5 py-0.2 text-[10px] font-semibold text-rose-300">
-                                {t.history.archiveUi.softDeletedBadge}
-                              </span>
-                            )}
                           </div>
                         </TableCell>
-                        {/* Archive & Soft Delete Actions */}
+                        {/* Archive & Restore Actions */}
                         <TableCell className="text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1">
                             {historyView === "active" ? (
-                              <>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openDialog("archive", sub)}
-                                  className="cursor-pointer border-amber-500/30 bg-amber-950/30 hover:bg-amber-900/50 text-amber-300 h-7 px-2 text-xs"
-                                  title={t.history.archiveUi.archiveBtn}
-                                >
-                                  <Archive className="mr-1 size-3" />
-                                  <span>{t.history.archiveUi.archiveBtn}</span>
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openDialog("soft-delete", sub)}
-                                  className="cursor-pointer border-zinc-700 bg-zinc-800/50 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs"
-                                  title={t.history.archiveUi.softDeleteBtn}
-                                >
-                                  <Trash2 className="size-3" />
-                                </Button>
-                              </>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openDialog("archive", sub)}
+                                className="cursor-pointer border-amber-500/30 bg-amber-950/30 hover:bg-amber-900/50 text-amber-300 h-7 px-2 text-xs"
+                                title={t.history.archiveUi.archiveBtn}
+                              >
+                                <Archive className="mr-1 size-3" />
+                                <span>{t.history.archiveUi.archiveBtn}</span>
+                              </Button>
                             ) : (
-                              <>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={() => openDialog("restore", sub)}
-                                  className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 h-7 px-2.5 text-xs shadow-xs"
-                                  title={t.history.archiveUi.restoreBtn}
-                                >
-                                  <RotateCcw className="mr-1 size-3" />
-                                  <span>{t.history.archiveUi.restoreBtn}</span>
-                                </Button>
-                                {!isSoftDeleted && (
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => openDialog("soft-delete", sub)}
-                                    className="cursor-pointer border-zinc-700 bg-zinc-800/50 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-400 h-7 px-2 text-xs"
-                                    title={t.history.archiveUi.softDeleteBtn}
-                                  >
-                                    <Trash2 className="size-3" />
-                                  </Button>
-                                )}
-                              </>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => openDialog("restore", sub)}
+                                className="cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 h-7 px-2.5 text-xs shadow-xs"
+                                title={t.history.archiveUi.restoreBtn}
+                              >
+                                <RotateCcw className="mr-1 size-3" />
+                                <span>{t.history.archiveUi.restoreBtn}</span>
+                              </Button>
                             )}
                           </div>
                         </TableCell>
@@ -586,7 +549,6 @@ export function SubmissionHistory() {
               <div className="divide-y divide-zinc-800/80">
                 {currentViewList.map((sub) => {
                   const isDone = sub.paymentStatus === "Done";
-                  const isSoftDeleted = previewSoftDeletedIds.has(sub.id);
                   return (
                     <div key={sub.id} className="p-4 space-y-3 bg-zinc-950/30">
                       {/* Header: Name, Unit Type & Badges */}
@@ -603,11 +565,6 @@ export function SubmissionHistory() {
                           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
                             {sub.unitType}
                           </span>
-                          {isSoftDeleted && (
-                            <span className="inline-flex items-center rounded bg-rose-950/70 border border-rose-500/40 px-1.5 py-0.2 text-[10px] font-semibold text-rose-300">
-                              {t.history.archiveUi.softDeletedBadge}
-                            </span>
-                          )}
                         </div>
                       </div>
 
@@ -682,51 +639,27 @@ export function SubmissionHistory() {
                         </span>
                       </div>
 
-                      {/* Mobile Archive & Soft Delete Actions */}
+                      {/* Mobile Archive & Restore Actions */}
                       <div className="pt-2 border-t border-zinc-800/60 flex items-center gap-2">
                         {historyView === "active" ? (
-                          <>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => openDialog("archive", sub)}
-                              className="flex-1 cursor-pointer border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-amber-500/50"
-                            >
-                              <Archive className="mr-1.5 size-3.5" />
-                              {t.history.archiveUi.archiveBtn}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => openDialog("soft-delete", sub)}
-                              className="flex-1 cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-rose-500/50"
-                            >
-                              <Trash2 className="mr-1.5 size-3.5" />
-                              {t.history.archiveUi.softDeleteBtn}
-                            </Button>
-                          </>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => openDialog("archive", sub)}
+                            className="flex-1 cursor-pointer border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-amber-500/50"
+                          >
+                            <Archive className="mr-1.5 size-3.5" />
+                            {t.history.archiveUi.archiveBtn}
+                          </Button>
                         ) : (
-                          <>
-                            <Button
-                              type="button"
-                              onClick={() => openDialog("restore", sub)}
-                              className="flex-1 cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 h-10 sm:h-9 text-xs focus-visible:ring-emerald-500/50"
-                            >
-                              <RotateCcw className="mr-1.5 size-3.5" />
-                              {t.history.archiveUi.restoreBtn}
-                            </Button>
-                            {!isSoftDeleted && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => openDialog("soft-delete", sub)}
-                                className="flex-1 cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-rose-950/50 hover:border-rose-500/40 hover:text-rose-300 text-zinc-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-rose-500/50"
-                              >
-                                <Trash2 className="mr-1.5 size-3.5" />
-                                {t.history.archiveUi.softDeleteBtn}
-                              </Button>
-                            )}
-                          </>
+                          <Button
+                            type="button"
+                            onClick={() => openDialog("restore", sub)}
+                            className="flex-1 cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 h-10 sm:h-9 text-xs focus-visible:ring-emerald-500/50"
+                          >
+                            <RotateCcw className="mr-1.5 size-3.5" />
+                            {t.history.archiveUi.restoreBtn}
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -739,27 +672,23 @@ export function SubmissionHistory() {
       </div>
 
       {/* Confirmation Dialog Modal for Customer Submissions View */}
-      <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && closeDialog()}>
+      <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && !isProcessingAction && closeDialog()}>
         <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-2xl max-h-[88dvh] overflow-y-auto overscroll-contain">
           <DialogHeader className="gap-2">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-950/60 px-2.5 py-0.5 text-[10px] font-semibold text-amber-300">
-                <ShieldAlert className="size-3 text-amber-400" />
-                {t.history.archiveUi.uiPreviewBadge}
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/60 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                <Archive className="size-3 text-emerald-400" />
+                {historyView === "active" ? t.history.archiveUi.archiveBtn : t.history.archiveUi.restoreBtn}
               </span>
             </div>
             <DialogTitle className="text-lg font-bold text-white">
               {confirmDialog.action === "archive"
                 ? t.history.archiveUi.confirmDialog.archiveTitle
-                : confirmDialog.action === "soft-delete"
-                ? t.history.archiveUi.confirmDialog.softDeleteTitle
                 : t.history.archiveUi.confirmDialog.restoreTitle}
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400 leading-relaxed">
               {confirmDialog.action === "archive"
                 ? t.history.archiveUi.confirmDialog.archiveDesc
-                : confirmDialog.action === "soft-delete"
-                ? t.history.archiveUi.confirmDialog.softDeleteDesc
                 : t.history.archiveUi.confirmDialog.restoreDesc}
             </DialogDescription>
           </DialogHeader>
@@ -809,6 +738,7 @@ export function SubmissionHistory() {
             <Button
               type="button"
               variant="outline"
+              disabled={isProcessingAction}
               onClick={closeDialog}
               className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-300 h-9 text-xs"
             >
@@ -816,19 +746,17 @@ export function SubmissionHistory() {
             </Button>
             <Button
               type="button"
+              disabled={isProcessingAction}
               onClick={handleConfirmAction}
               className={`cursor-pointer font-semibold h-9 text-xs shadow-md ${
-                confirmDialog.action === "soft-delete"
-                  ? "bg-rose-600 hover:bg-rose-500 text-white"
-                  : confirmDialog.action === "archive"
+                confirmDialog.action === "archive"
                   ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
                   : "bg-emerald-500 hover:bg-emerald-400 text-zinc-950"
               }`}
             >
+              {isProcessingAction && <Loader2 className="mr-1.5 size-3.5 animate-spin" />}
               {confirmDialog.action === "archive"
                 ? t.history.archiveUi.confirmDialog.confirmArchiveBtn
-                : confirmDialog.action === "soft-delete"
-                ? t.history.archiveUi.confirmDialog.confirmSoftDeleteBtn
                 : t.history.archiveUi.confirmDialog.confirmRestoreBtn}
             </Button>
           </DialogFooter>
