@@ -201,7 +201,6 @@ export function AuthModal({
         return;
       }
 
-      // Close registration form and show modern success dialog only after Supabase confirms creation
       handleClose();
       openSuccessDialog({
         username: registeredUsername || cleanUsername,
@@ -216,13 +215,13 @@ export function AuthModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-2xl max-h-[90dvh] overflow-y-auto overscroll-contain">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-2xl rounded-2xl max-h-[90dvh] overflow-y-auto overscroll-contain">
         <DialogHeader className="gap-1.5 text-center sm:text-left">
           <div className="flex items-center justify-center sm:justify-start gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-              <User className="size-4" />
+            <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shrink-0">
+              <User className="size-4.5" />
             </div>
-            <DialogTitle className="text-lg font-bold text-white">
+            <DialogTitle className="text-base sm:text-lg font-bold text-white">
               {mode === "login"
                 ? isBisaya
                   ? "Sulod sa Imong Account"
@@ -232,7 +231,7 @@ export function AuthModal({
                 : "Create Customer Account"}
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-zinc-400">
+          <DialogDescription className="text-xs text-zinc-400 leading-relaxed">
             {mode === "login"
               ? isBisaya
                 ? "Isulod ang imong username ug password aron masubay ang imong mga load request."
@@ -244,13 +243,13 @@ export function AuthModal({
         </DialogHeader>
 
         {/* Tab switchers */}
-        <div className="grid grid-cols-2 rounded-lg bg-zinc-900/80 p-1 border border-zinc-800 text-xs mt-2">
+        <div className="grid grid-cols-2 rounded-xl bg-zinc-900/90 p-1 border border-zinc-800 text-xs mt-2">
           <button
             type="button"
             onClick={() => handleModeSwitch("login")}
-            className={`py-1.5 rounded-md font-medium transition-all ${
+            className={`min-h-[40px] flex items-center justify-center py-2 px-3 rounded-lg font-semibold transition-all cursor-pointer ${
               mode === "login"
-                ? "bg-emerald-500 text-zinc-950 font-semibold shadow-sm"
+                ? "bg-emerald-500 text-zinc-950 shadow-sm"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -259,9 +258,9 @@ export function AuthModal({
           <button
             type="button"
             onClick={() => handleModeSwitch("register")}
-            className={`py-1.5 rounded-md font-medium transition-all ${
+            className={`min-h-[40px] flex items-center justify-center py-2 px-3 rounded-lg font-semibold transition-all cursor-pointer ${
               mode === "register"
-                ? "bg-emerald-500 text-zinc-950 font-semibold shadow-sm"
+                ? "bg-emerald-500 text-zinc-950 shadow-sm"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -271,159 +270,178 @@ export function AuthModal({
 
         {/* Alerts */}
         {errorMessage && (
-          <div className="flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-950/40 p-2.5 text-xs text-rose-300 mt-2">
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 p-3 text-xs text-rose-300 mt-2">
             <AlertCircle className="size-4 shrink-0 mt-0.5 text-rose-400" />
-            <span>{errorMessage}</span>
+            <span className="leading-relaxed">{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-950/40 p-2.5 text-xs text-emerald-300 mt-2">
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3 text-xs text-emerald-300 mt-2">
             <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-emerald-400" />
-            <span>{successMessage}</span>
+            <span className="leading-relaxed">{successMessage}</span>
           </div>
         )}
 
         {/* Login Form */}
         {mode === "login" ? (
-          <form onSubmit={handleLogin} className="space-y-3.5 mt-2">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                <User className="size-3 text-emerald-400" />
+          <form onSubmit={handleLogin} className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <label htmlFor="login-username" className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 cursor-pointer">
+                <User className="size-3.5 text-emerald-400" />
                 <span>Username</span>
               </label>
               <Input
+                id="login-username"
+                name="username"
                 type="text"
                 autoCapitalize="none"
                 autoCorrect="off"
+                autoComplete="username"
                 required
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={isSubmitting}
-                className="border-zinc-800 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 h-9 text-xs focus-visible:ring-emerald-500/50"
+                className="border-zinc-800 bg-zinc-900/90 text-zinc-100 placeholder:text-zinc-600 min-h-[44px] sm:min-h-[40px] text-base sm:text-xs focus-visible:ring-2 focus-visible:ring-emerald-500/50 rounded-xl"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                <Lock className="size-3 text-emerald-400" />
+            <div className="space-y-1.5">
+              <label htmlFor="login-password" className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 cursor-pointer">
+                <Lock className="size-3.5 text-emerald-400" />
                 <span>Password</span>
               </label>
               <Input
+                id="login-password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
                 required
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isSubmitting}
-                className="border-zinc-800 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 h-9 text-xs focus-visible:ring-emerald-500/50"
+                className="border-zinc-800 bg-zinc-900/90 text-zinc-100 placeholder:text-zinc-600 min-h-[44px] sm:min-h-[40px] text-base sm:text-xs focus-visible:ring-2 focus-visible:ring-emerald-500/50 rounded-xl"
               />
             </div>
 
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold h-9 text-xs shadow-md mt-1"
+              className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold min-h-[44px] sm:min-h-[40px] text-sm sm:text-xs shadow-md mt-2 rounded-xl transition-all cursor-pointer"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="size-3.5 mr-1.5 animate-spin" />
-                  {isBisaya ? "Nagasulod..." : "Signing in..."}
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  <span>{isBisaya ? "Nagasulod..." : "Signing in..."}</span>
                 </>
               ) : (
                 <>
-                  <LogIn className="size-3.5 mr-1.5" />
-                  {isBisaya ? "Sulod (Sign In)" : "Sign In"}
+                  <LogIn className="size-4 mr-2" />
+                  <span>{isBisaya ? "Sulod (Sign In)" : "Sign In"}</span>
                 </>
               )}
             </Button>
           </form>
         ) : (
           /* Registration Form */
-          <form onSubmit={handleRegister} className="space-y-3 mt-2">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                <User className="size-3 text-emerald-400" />
+          <form onSubmit={handleRegister} className="space-y-3.5 mt-2">
+            <div className="space-y-1.5">
+              <label htmlFor="reg-name" className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 cursor-pointer">
+                <User className="size-3.5 text-emerald-400" />
                 <span>{isBisaya ? "Kompletong Pangalan" : "Account Name / Full Name"}</span>
               </label>
               <Input
+                id="reg-name"
+                name="name"
                 type="text"
+                autoComplete="name"
                 required
                 placeholder={isBisaya ? "Juan Dela Cruz" : "Juan Dela Cruz"}
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value)}
                 disabled={isSubmitting}
-                className="border-zinc-800 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 h-9 text-xs focus-visible:ring-emerald-500/50"
+                className="border-zinc-800 bg-zinc-900/90 text-zinc-100 placeholder:text-zinc-600 min-h-[44px] sm:min-h-[40px] text-base sm:text-xs focus-visible:ring-2 focus-visible:ring-emerald-500/50 rounded-xl"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                  <AtSign className="size-3 text-emerald-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label htmlFor="reg-username" className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 cursor-pointer">
+                  <AtSign className="size-3.5 text-emerald-400" />
                   <span>Username</span>
                 </label>
                 <Input
+                  id="reg-username"
+                  name="username"
                   type="text"
                   autoCapitalize="none"
                   autoCorrect="off"
+                  autoComplete="username"
                   required
                   placeholder={isBisaya ? "Isulod ang imong username" : "Enter your username"}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={isSubmitting}
-                  className="border-zinc-800 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 h-9 text-xs focus-visible:ring-emerald-500/50"
+                  className="border-zinc-800 bg-zinc-900/90 text-zinc-100 placeholder:text-zinc-600 min-h-[44px] sm:min-h-[40px] text-base sm:text-xs focus-visible:ring-2 focus-visible:ring-emerald-500/50 rounded-xl"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                  <Phone className="size-3 text-emerald-400" />
+              <div className="space-y-1.5">
+                <label htmlFor="reg-phone" className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 cursor-pointer">
+                  <Phone className="size-3.5 text-emerald-400" />
                   <span>{isBisaya ? "Numero sa CP" : "Phone Number"}</span>
                 </label>
                 <Input
+                  id="reg-phone"
+                  name="phoneNumber"
                   type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
                   required
                   placeholder="0912-345-6789"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   disabled={isSubmitting}
-                  className="border-zinc-800 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 h-9 text-xs focus-visible:ring-emerald-500/50"
+                  className="border-zinc-800 bg-zinc-900/90 text-zinc-100 placeholder:text-zinc-600 min-h-[44px] sm:min-h-[40px] text-base sm:text-xs font-mono focus-visible:ring-2 focus-visible:ring-emerald-500/50 rounded-xl"
                 />
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-                <Lock className="size-3 text-emerald-400" />
+            <div className="space-y-1.5">
+              <label htmlFor="reg-password" className="text-xs font-medium text-zinc-300 flex items-center gap-1.5 cursor-pointer">
+                <Lock className="size-3.5 text-emerald-400" />
                 <span>{isBisaya ? "Password (labing menos 6 ka letra)" : "Password (min. 6 characters)"}</span>
               </label>
               <Input
+                id="reg-password"
+                name="password"
                 type="password"
+                autoComplete="new-password"
                 required
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isSubmitting}
-                className="border-zinc-800 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 h-9 text-xs focus-visible:ring-emerald-500/50"
+                className="border-zinc-800 bg-zinc-900/90 text-zinc-100 placeholder:text-zinc-600 min-h-[44px] sm:min-h-[40px] text-base sm:text-xs focus-visible:ring-2 focus-visible:ring-emerald-500/50 rounded-xl"
               />
             </div>
 
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold h-9 text-xs shadow-md mt-1"
+              className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold min-h-[44px] sm:min-h-[40px] text-sm sm:text-xs shadow-md mt-2 rounded-xl transition-all cursor-pointer"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="size-3.5 mr-1.5 animate-spin" />
-                  {isBisaya ? "Naghimo og account..." : "Creating account..."}
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  <span>{isBisaya ? "Naghimo og account..." : "Creating account..."}</span>
                 </>
               ) : (
                 <>
-                  <UserPlus className="size-3.5 mr-1.5" />
-                  {isBisaya ? "Kompletoha ang Rehistro" : "Create Customer Account"}
+                  <UserPlus className="size-4 mr-2" />
+                  <span>{isBisaya ? "Kompletoha ang Rehistro" : "Create Customer Account"}</span>
                 </>
               )}
             </Button>

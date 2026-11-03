@@ -33,7 +33,7 @@ export function RegistrationSuccessDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm sm:max-w-[390px] border border-emerald-500/25 bg-zinc-950/95 text-zinc-100 p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(16,185,129,0.15)] rounded-2xl backdrop-blur-xl">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm sm:max-w-[390px] border border-emerald-500/25 bg-zinc-950/95 text-zinc-100 p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(16,185,129,0.15)] rounded-2xl backdrop-blur-xl max-h-[90dvh] overflow-y-auto overscroll-contain">
         <DialogHeader className="flex flex-col items-center text-center space-y-3 pt-2">
           {/* Success Checkmark Icon with emerald glow */}
           <div className="relative flex size-14 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.25)] animate-in zoom-in-95 duration-200">
@@ -64,7 +64,7 @@ export function RegistrationSuccessDialog({
           <Button
             type="button"
             onClick={onContinue}
-            className="w-full cursor-pointer bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold h-10 text-xs sm:text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:shadow-[0_0_25px_rgba(16,185,129,0.45)]"
+            className="w-full cursor-pointer bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold min-h-[44px] h-11 sm:h-10 text-xs sm:text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:shadow-[0_0_25px_rgba(16,185,129,0.45)] rounded-xl"
           >
             <span>{t.auth.continueBtn}</span>
             <ArrowRight className="size-4 ml-1.5" />

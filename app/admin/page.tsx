@@ -61,7 +61,6 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
-import BlurText from "@/components/BlurText";
 import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useAuth } from "@/context/AuthContext";
@@ -287,13 +286,13 @@ export default function AdminPage() {
     <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100 font-sans selection:bg-emerald-500/20 selection:text-emerald-200 overflow-x-hidden">
       {/* Admin Header */}
       <header className="sticky top-0 z-40 w-full border-b border-zinc-800/70 bg-zinc-950/80 backdrop-blur-md">
-        <div className="container mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 gap-2">
-          <div className="flex items-center gap-3 shrink-0">
-            <Link href="/" className="flex items-center gap-2.5 group cursor-pointer">
+        <div className="container mx-auto flex h-14 max-w-6xl items-center justify-between px-3 sm:px-6 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer">
               <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 transition-transform group-hover:scale-105 shrink-0">
                 <Tv className="size-3.5" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="text-sm font-semibold tracking-tight text-white group-hover:text-emerald-400 transition-colors">
                   Paload ko
                 </span>
@@ -305,16 +304,16 @@ export default function AdminPage() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <LanguageSwitcher />
 
             <Link href="/">
               <Button
                 variant="outline"
                 size="sm"
-                className="cursor-pointer font-medium border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs px-2.5 h-8 rounded-md"
+                className="cursor-pointer font-medium border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs px-2.5 min-h-[36px] h-9 sm:h-8 rounded-lg"
               >
-                <ArrowLeft className="mr-1.5 size-3.5" />
+                <ArrowLeft className="mr-1 size-3.5" />
                 <span className="hidden sm:inline">{t.nav.userPovForm}</span>
                 <span className="sm:hidden">{t.nav.userPovMobile}</span>
               </Button>
@@ -328,9 +327,9 @@ export default function AdminPage() {
                 router.push("/admin-login");
               }}
               title="Sign Out of Admin Portal"
-              className="cursor-pointer font-medium border-zinc-800 bg-zinc-900/50 hover:bg-rose-950/30 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 text-xs px-2.5 h-8 rounded-md transition-colors"
+              className="cursor-pointer font-medium border-zinc-800 bg-zinc-900/50 hover:bg-rose-950/30 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 text-xs px-2.5 min-h-[36px] h-9 sm:h-8 rounded-lg transition-colors"
             >
-              <LogOut className="mr-1.5 size-3.5 text-rose-400" />
+              <LogOut className="mr-1 sm:mr-1.5 size-3.5 text-rose-400" />
               <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
@@ -338,8 +337,8 @@ export default function AdminPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 py-6 sm:py-8">
-        <div className="container mx-auto max-w-6xl px-4 sm:px-6 space-y-6">
+      <main className="flex-1 py-5 sm:py-8">
+        <div className="container mx-auto max-w-6xl px-3 sm:px-6 space-y-5 sm:space-y-6">
           {/* Page Title & Status */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -413,8 +412,8 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Metrics Overview Cards (Compact, Consistent Heights, Subtle Icons) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+          {/* Metrics Overview Cards (Responsive 1-col on mobile, 2-col on tablet, 3-col on desktop) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {/* 1. Total Submissions Card */}
             <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 sm:p-5 flex flex-col justify-between">
               <div className="flex items-center justify-between">
@@ -455,8 +454,8 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* 3. Done / Verified Summary Card */}
-            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 sm:p-5 flex flex-col justify-between">
+            {/* 3. Done / Verified Summary Card (Spans 2 cols on tablet for a balanced grid) */}
+            <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 sm:p-5 flex flex-col justify-between sm:col-span-2 lg:col-span-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wider text-emerald-400">
                   {t.admin.doneCountTitle}
@@ -511,11 +510,11 @@ export default function AdminPage() {
 
               {/* Row 2: Navigation Tabs (Active Records vs Archived Records) */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-zinc-800/60">
-                <div className="inline-flex items-center rounded-lg bg-zinc-950/90 p-1 border border-zinc-800/70 text-xs">
+                <div className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex items-center rounded-lg bg-zinc-950/90 p-1 border border-zinc-800/70 text-xs gap-1 sm:gap-0">
                   <button
                     type="button"
                     onClick={() => setAdminView("active")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       adminView === "active"
                         ? "bg-zinc-800 text-white shadow-xs"
                         : "text-zinc-400 hover:text-zinc-200"
@@ -535,7 +534,7 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setAdminView("archived")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[40px] sm:min-h-[32px] rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       adminView === "archived"
                         ? "bg-zinc-800 text-white shadow-xs"
                         : "text-zinc-400 hover:text-zinc-200"
@@ -565,7 +564,7 @@ export default function AdminPage() {
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2">
                 {/* 1. Customer Search Input */}
                 <div className="relative flex-1 min-w-0 max-w-md">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-zinc-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
                     <Search className="size-3.5" />
                   </div>
                   <Input
@@ -573,23 +572,23 @@ export default function AdminPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder={t.admin.searchPlaceholder}
-                    className="pl-8 pr-8 h-8.5 w-full bg-zinc-950/80 border-zinc-800 text-white placeholder:text-zinc-500 text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/60 rounded-md"
+                    className="pl-9 pr-9 min-h-[44px] sm:min-h-[36px] h-auto w-full bg-zinc-950/80 border-zinc-800 text-white placeholder:text-zinc-500 text-base sm:text-xs focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/60 rounded-xl sm:rounded-md"
                   />
                   {searchTerm && (
                     <button
                       type="button"
                       onClick={() => setSearchTerm("")}
-                      className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-zinc-400 hover:text-white cursor-pointer"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center justify-center min-w-[36px] text-zinc-400 hover:text-white cursor-pointer"
                       title={t.admin.clearSearch}
                       aria-label={t.admin.clearSearch}
                     >
-                      <X className="size-3.5" />
+                      <X className="size-4 sm:size-3.5" />
                     </button>
                   )}
                 </div>
 
                 {/* 2. Status Filters (All, Pending Verification, Done) */}
-                <div className="flex items-center flex-wrap gap-1.5 shrink-0">
+                <div className="flex items-center flex-wrap gap-2 sm:gap-1.5 shrink-0">
                   <span className="text-xs text-zinc-400 mr-1 hidden sm:inline">
                     {t.admin.filterLabel}
                   </span>
@@ -597,7 +596,7 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setStatusFilter("ALL")}
-                    className={`px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                    className={`min-h-[38px] sm:min-h-[32px] px-3 py-1.5 rounded-lg sm:rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       statusFilter === "ALL"
                         ? "bg-zinc-800 text-white border border-zinc-700"
                         : "bg-zinc-950/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80"
@@ -609,7 +608,7 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setStatusFilter("PENDING")}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                    className={`min-h-[38px] sm:min-h-[32px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       statusFilter === "PENDING"
                         ? "bg-amber-950/60 text-amber-300 border border-amber-500/40"
                         : "bg-zinc-950/80 text-zinc-400 hover:text-amber-300 border border-zinc-800/80"
@@ -625,7 +624,7 @@ export default function AdminPage() {
                   <button
                     type="button"
                     onClick={() => setStatusFilter("DONE")}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors ${
+                    className={`min-h-[38px] sm:min-h-[32px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg sm:rounded-md text-xs font-medium cursor-pointer transition-colors ${
                       statusFilter === "DONE"
                         ? "bg-emerald-950/60 text-emerald-300 border border-emerald-500/40"
                         : "bg-zinc-950/80 text-zinc-400 hover:text-emerald-300 border border-zinc-800/80"
@@ -1144,7 +1143,7 @@ export default function AdminPage() {
                             <Button
                               type="button"
                               onClick={() => updatePaymentStatus(sub.id, "Done")}
-                              className="w-full cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white h-8 text-xs rounded-md transition-colors"
+                              className="w-full cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white min-h-[44px] sm:min-h-[36px] text-xs font-semibold rounded-xl sm:rounded-md transition-colors"
                             >
                               <Check className="mr-1.5 size-3.5" />
                               {t.admin.markAsDoneBtn}
@@ -1158,7 +1157,7 @@ export default function AdminPage() {
                                   type="button"
                                   variant="outline"
                                   onClick={() => openArchiveDialog("archive", sub)}
-                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 h-8 text-xs rounded-md font-medium"
+                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 min-h-[44px] sm:min-h-[36px] text-xs rounded-xl sm:rounded-md font-medium"
                                 >
                                   <Archive className="mr-1.5 size-3.5 text-amber-400" />
                                   {t.admin.archiveUi.archiveBtn}
@@ -1167,7 +1166,7 @@ export default function AdminPage() {
                                   type="button"
                                   variant="outline"
                                   onClick={() => openDeleteDialog(sub)}
-                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-rose-950/40 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 h-8 text-xs rounded-md font-medium transition-colors"
+                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-rose-950/40 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 min-h-[44px] sm:min-h-[36px] text-xs rounded-xl sm:rounded-md font-medium transition-colors"
                                 >
                                   <Trash2 className="mr-1.5 size-3.5" />
                                   {t.admin.archiveUi.deleteBtn}
@@ -1178,7 +1177,7 @@ export default function AdminPage() {
                                 <Button
                                   type="button"
                                   onClick={() => openArchiveDialog("restore", sub)}
-                                  className="flex-1 cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white h-8 text-xs rounded-md transition-colors"
+                                  className="flex-1 cursor-pointer font-medium bg-emerald-600 hover:bg-emerald-500 text-white min-h-[44px] sm:min-h-[36px] text-xs rounded-xl sm:rounded-md transition-colors"
                                 >
                                   <RotateCcw className="mr-1.5 size-3.5" />
                                   {t.admin.archiveUi.restoreBtn}
@@ -1187,7 +1186,7 @@ export default function AdminPage() {
                                   type="button"
                                   variant="outline"
                                   onClick={() => openDeleteDialog(sub)}
-                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-rose-950/40 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 h-8 text-xs rounded-md font-medium transition-colors"
+                                  className="flex-1 cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-rose-950/40 hover:border-rose-500/30 hover:text-rose-300 text-zinc-400 min-h-[44px] sm:min-h-[36px] text-xs rounded-xl sm:rounded-md font-medium transition-colors"
                                 >
                                   <Trash2 className="mr-1.5 size-3.5" />
                                   {t.admin.archiveUi.deleteBtn}
@@ -1215,7 +1214,7 @@ export default function AdminPage() {
           }
         }}
       >
-        <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-5 sm:p-6 shadow-xl rounded-xl">
+        <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-xl rounded-xl max-h-[88dvh] overflow-y-auto overscroll-contain">
           <AlertDialogHeader className="gap-1.5">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-950/40 px-2 py-0.5 text-[10px] font-medium text-rose-300">
@@ -1276,14 +1275,14 @@ export default function AdminPage() {
             <AlertDialogCancel
               disabled={isProcessingDelete}
               onClick={closeDeleteDialog}
-              className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 h-8.5 text-xs rounded-md"
+              className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 min-h-[44px] sm:min-h-[36px] text-xs rounded-xl sm:rounded-md font-medium"
             >
               {t.admin.archiveUi.confirmDialog.cancelBtn}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={isProcessingDelete}
               onClick={handlePermanentDelete}
-              className="cursor-pointer font-medium bg-rose-600 hover:bg-rose-500 text-white h-8.5 text-xs rounded-md shadow-xs"
+              className="cursor-pointer font-medium bg-rose-600 hover:bg-rose-500 text-white min-h-[44px] sm:min-h-[36px] text-xs rounded-xl sm:rounded-md shadow-xs"
             >
               {isProcessingDelete ? (
                 <>
@@ -1383,7 +1382,7 @@ export default function AdminPage() {
               variant="outline"
               onClick={closeArchiveDialog}
               disabled={isProcessingArchive}
-              className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 h-8.5 text-xs rounded-md"
+              className="cursor-pointer border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 min-h-[44px] sm:min-h-[36px] text-xs rounded-xl sm:rounded-md font-medium"
             >
               {t.admin.archiveUi.confirmDialog.cancelBtn}
             </Button>
@@ -1391,7 +1390,7 @@ export default function AdminPage() {
               type="button"
               onClick={handleConfirmArchive}
               disabled={isProcessingArchive}
-              className={`cursor-pointer font-medium h-8.5 text-xs rounded-md shadow-xs ${
+              className={`cursor-pointer font-medium min-h-[44px] sm:min-h-[36px] text-xs rounded-xl sm:rounded-md shadow-xs ${
                 archiveDialog.action === "archive"
                   ? "bg-amber-600 hover:bg-amber-500 text-white"
                   : "bg-emerald-600 hover:bg-emerald-500 text-white"

@@ -511,24 +511,24 @@ export function UserInformationForm() {
   };
 
   return (
-    <section id="info-form" className="scroll-mt-20 py-12 md:py-16">
-      <div className="container mx-auto max-w-3xl px-4 sm:px-6">
+    <section id="info-form" className="scroll-mt-20 py-10 md:py-16">
+      <div className="container mx-auto max-w-3xl px-3 sm:px-6">
         {/* Section Header */}
-        <div className="mb-8 text-center sm:text-left">
+        <div className="mb-6 sm:mb-8 text-center sm:text-left">
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2">
             <Tv className="size-4" />
             <span>{t.form.stepBadge}</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+          <h2 className="text-xl font-extrabold tracking-tight text-white sm:text-3xl break-words">
             {t.form.formTitle}
           </h2>
-          <p className="mt-1.5 text-sm text-zinc-400 sm:text-base">
+          <p className="mt-1.5 text-xs text-zinc-400 sm:text-base leading-relaxed">
             {t.form.formSubtitle}
           </p>
         </div>
 
         {/* Prototype Notice Banner */}
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-emerald-500/30 bg-emerald-950/30 p-4 text-xs text-zinc-300 sm:text-sm backdrop-blur-xs">
+        <div className="mb-5 sm:mb-6 flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3.5 sm:p-4 text-xs text-zinc-300 sm:text-sm backdrop-blur-xs">
           <Info className="size-5 shrink-0 text-emerald-400 mt-0.5" />
           <div>
             <p className="font-semibold text-white">{t.form.prototypeNoticeTitle}</p>
@@ -539,7 +539,7 @@ export function UserInformationForm() {
         </div>
 
         {/* Form or Confirmation Card */}
-        <div className="rounded-2xl border border-zinc-800/90 bg-zinc-900/80 p-4 shadow-xl backdrop-blur-sm sm:p-8">
+        <div className="rounded-2xl border border-zinc-800/90 bg-zinc-900/80 p-3.5 shadow-xl backdrop-blur-sm sm:p-8">
           {isSubmitted && submittedData ? (
             /* Confirmation View */
             <div className="space-y-6">
@@ -660,7 +660,7 @@ export function UserInformationForm() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full sm:w-auto cursor-pointer border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 h-10"
+                    className="w-full sm:w-auto cursor-pointer border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-300 min-h-[44px] sm:min-h-[40px] text-xs sm:text-sm rounded-xl"
                   >
                     <LayoutDashboard className="mr-2 size-4" />
                     {t.form.summary.viewAdminBtn}
@@ -669,14 +669,14 @@ export function UserInformationForm() {
                 <Button
                   variant="outline"
                   onClick={handleEdit}
-                  className="w-full sm:w-auto cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 h-10"
+                  className="w-full sm:w-auto cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 min-h-[44px] sm:min-h-[40px] text-xs sm:text-sm rounded-xl"
                 >
                   <Pencil className="mr-2 size-4" />
                   {t.form.summary.editInfoBtn}
                 </Button>
                 <Button
                   onClick={handleReset}
-                  className="w-full sm:w-auto cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] h-10"
+                  className="w-full sm:w-auto cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] min-h-[44px] sm:min-h-[40px] text-xs sm:text-sm rounded-xl"
                 >
                   <RotateCcw className="mr-2 size-4" />
                   {t.form.summary.submitAnotherBtn}
@@ -733,7 +733,7 @@ export function UserInformationForm() {
                     e.stopPropagation();
                     openAuthModal("login");
                   }}
-                  className="w-full sm:w-auto h-10 px-6 font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] cursor-pointer text-xs sm:text-sm transition-all active:scale-[0.98]"
+                  className="w-full sm:w-auto min-h-[44px] sm:min-h-[40px] px-6 font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] cursor-pointer text-xs sm:text-sm transition-all active:scale-[0.98] rounded-xl"
                 >
                   <LogIn className="size-4 mr-2" />
                   {language === "ceb" ? "Sulod (Sign In)" : "Sign In with Username"}
@@ -746,7 +746,7 @@ export function UserInformationForm() {
                     e.stopPropagation();
                     openAuthModal("register");
                   }}
-                  className="w-full sm:w-auto h-10 px-5 border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white cursor-pointer text-xs sm:text-sm"
+                  className="w-full sm:w-auto min-h-[44px] sm:min-h-[40px] px-5 border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white cursor-pointer text-xs sm:text-sm rounded-xl"
                 >
                   <UserPlus className="size-4 mr-2 text-emerald-400" />
                   {language === "ceb" ? "Bag-o ka pa? Rehistro" : "New Customer? Register"}
@@ -793,7 +793,7 @@ export function UserInformationForm() {
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* 1. Account Name */}
                 <div className="space-y-2 sm:col-span-1">
-                  <Label htmlFor="name" className="text-sm font-medium text-zinc-200">
+                  <Label htmlFor="name" className="text-xs sm:text-sm font-medium text-zinc-200">
                     <span className="flex items-center gap-1.5">
                       <User className="size-3.5 text-zinc-400" />
                       {t.form.accountNameLabel} <span className="text-red-400 font-bold">*</span>
@@ -803,12 +803,13 @@ export function UserInformationForm() {
                     id="name"
                     name="name"
                     type="text"
+                    autoComplete="name"
                     placeholder={t.form.accountNamePlaceholder}
                     value={formData.name}
                     onChange={(e) => handleTextChange("name", e.target.value)}
                     aria-invalid={!!errors.name}
                     aria-describedby={errors.name ? "name-error" : undefined}
-                    className={`h-11 sm:h-10 text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 ${
+                    className={`min-h-[44px] sm:min-h-[40px] text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-xl ${
                       errors.name ? "border-red-500 focus-visible:ring-red-500/30" : ""
                     }`}
                   />
@@ -827,7 +828,7 @@ export function UserInformationForm() {
                 {/* 2. Phone Number */}
                 <div className="space-y-2 sm:col-span-1">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="phoneNumber" className="text-sm font-medium text-zinc-200">
+                    <Label htmlFor="phoneNumber" className="text-xs sm:text-sm font-medium text-zinc-200">
                       <span className="flex items-center gap-1.5">
                         <Phone className="size-3.5 text-zinc-400" />
                         {t.form.phoneLabel} <span className="text-red-400 font-bold">*</span>
@@ -842,6 +843,7 @@ export function UserInformationForm() {
                     name="phoneNumber"
                     type="tel"
                     inputMode="numeric"
+                    autoComplete="tel"
                     placeholder={t.form.phonePlaceholder}
                     value={formData.phoneNumber}
                     onKeyDown={handleNumericKeyDown}
@@ -851,7 +853,7 @@ export function UserInformationForm() {
                     aria-describedby={
                       errors.phoneNumber ? "phone-error" : "phone-help"
                     }
-                    className={`h-11 sm:h-10 text-base sm:text-sm font-mono bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 ${
+                    className={`min-h-[44px] sm:min-h-[40px] text-base sm:text-sm font-mono bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-xl ${
                       errors.phoneNumber
                         ? "border-red-500 focus-visible:ring-red-500/30"
                         : ""
@@ -874,7 +876,7 @@ export function UserInformationForm() {
 
                 {/* 3. Unit Type (Satellite, GSat, Fili TV, Sky Direct, Signal) */}
                 <div className="space-y-2 sm:col-span-1">
-                  <Label htmlFor="unitType" className="text-sm font-medium text-zinc-200">
+                  <Label htmlFor="unitType" className="text-xs sm:text-sm font-medium text-zinc-200">
                     <span className="flex items-center gap-1.5">
                       <Tv className="size-3.5 text-zinc-400" />
                       {t.form.unitTypeLabel} <span className="text-red-400 font-bold">*</span>
@@ -891,7 +893,7 @@ export function UserInformationForm() {
                       aria-describedby={
                         errors.unitType ? "unittype-error" : undefined
                       }
-                      className={`h-11 sm:h-10 w-full text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 ${
+                      className={`min-h-[44px] sm:min-h-[40px] w-full text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-xl ${
                         errors.unitType
                           ? "border-red-500 focus-visible:ring-red-500/30"
                           : ""
@@ -922,7 +924,7 @@ export function UserInformationForm() {
                 {/* 4. Account Number */}
                 <div className="space-y-2 sm:col-span-1">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="receiverNumber" className="text-sm font-medium text-zinc-200">
+                    <Label htmlFor="receiverNumber" className="text-xs sm:text-sm font-medium text-zinc-200">
                       <span className="flex items-center gap-1.5">
                         <Hash className="size-3.5 text-zinc-400" />
                         {t.form.accountNumberLabel} <span className="text-red-400 font-bold">*</span>
@@ -945,6 +947,7 @@ export function UserInformationForm() {
                     name="receiverNumber"
                     type="text"
                     inputMode="numeric"
+                    autoComplete="off"
                     maxLength={receiverReqLength ?? 16}
                     placeholder={t.form.accountNumberPlaceholder(formData.unitType)}
                     value={formData.receiverNumber}
@@ -968,7 +971,7 @@ export function UserInformationForm() {
                     aria-describedby={
                       errors.receiverNumber ? "receiver-error" : "receiver-help"
                     }
-                    className={`h-11 sm:h-10 text-base sm:text-sm font-mono bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 ${
+                    className={`min-h-[44px] sm:min-h-[40px] text-base sm:text-sm font-mono bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-xl ${
                       errors.receiverNumber
                         ? "border-red-500 focus-visible:ring-red-500/30"
                         : ""
@@ -993,7 +996,7 @@ export function UserInformationForm() {
 
                 {/* 5. Address (Textarea) */}
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="address" className="text-sm font-medium text-zinc-200">
+                  <Label htmlFor="address" className="text-xs sm:text-sm font-medium text-zinc-200">
                     <span className="flex items-center gap-1.5">
                       <MapPin className="size-3.5 text-zinc-400" />
                       {t.form.addressLabel} <span className="text-red-400 font-bold">*</span>
@@ -1003,6 +1006,7 @@ export function UserInformationForm() {
                     id="address"
                     name="address"
                     rows={3}
+                    autoComplete="street-address"
                     placeholder={t.form.addressPlaceholder}
                     value={formData.address}
                     onChange={(e) => handleTextChange("address", e.target.value)}
@@ -1010,7 +1014,7 @@ export function UserInformationForm() {
                     aria-describedby={
                       errors.address ? "address-error" : undefined
                     }
-                    className={`min-h-[88px] text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 ${
+                    className={`min-h-[96px] text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-xl ${
                       errors.address
                         ? "border-red-500 focus-visible:ring-red-500/30"
                         : ""
@@ -1030,7 +1034,7 @@ export function UserInformationForm() {
 
                 {/* 6. Note (Optional) (Textarea) */}
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="note" className="text-sm font-medium text-zinc-200">
+                  <Label htmlFor="note" className="text-xs sm:text-sm font-medium text-zinc-200">
                     <span className="flex items-center gap-1.5">
                       <FileText className="size-3.5 text-zinc-400" />
                       {t.form.noteLabel}
@@ -1043,7 +1047,7 @@ export function UserInformationForm() {
                     placeholder={t.form.notePlaceholder}
                     value={formData.note || ""}
                     onChange={(e) => handleTextChange("note", e.target.value)}
-                    className="min-h-[72px] text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500"
+                    className="min-h-[80px] text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-xl"
                   />
                 </div>
               </div>
@@ -1085,7 +1089,7 @@ export function UserInformationForm() {
                           {t.form.recipientBadge}
                         </span>
                       </div>
-                      <div className="text-2xl sm:text-3xl font-black font-mono tracking-wider text-white">
+                      <div className="text-xl sm:text-2xl md:text-3xl font-black font-mono tracking-tight sm:tracking-wider text-white break-all">
                         {ADMIN_GCASH_NUMBER}
                       </div>
                       <p className="text-xs text-zinc-400">
@@ -1097,7 +1101,7 @@ export function UserInformationForm() {
                       variant="outline"
                       size="sm"
                       onClick={handleCopyAdminNumber}
-                      className="self-stretch w-full cursor-pointer border-emerald-500/40 bg-emerald-900/40 hover:bg-emerald-800/50 text-emerald-300 hover:text-white transition-colors h-10 sm:h-9 text-xs font-semibold focus-visible:ring-emerald-500/50"
+                      className="self-stretch w-full cursor-pointer border-emerald-500/40 bg-emerald-900/40 hover:bg-emerald-800/50 text-emerald-300 hover:text-white transition-colors min-h-[44px] sm:min-h-[38px] text-xs font-semibold focus-visible:ring-emerald-500/50 rounded-xl"
                     >
                       {copied ? (
                         <>
@@ -1137,7 +1141,7 @@ export function UserInformationForm() {
                         ) : null}
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-2xl sm:text-3xl font-black font-mono tracking-wider text-emerald-400">
+                        <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight sm:tracking-wider text-emerald-400">
                           {formData.paymentAmount || "—"}
                         </span>
                         {formData.paymentAmount && (
@@ -1251,7 +1255,7 @@ export function UserInformationForm() {
                         aria-describedby={
                           errors.paymentAmount ? "amount-error" : "amount-help"
                         }
-                        className={`h-11 sm:h-10 w-full text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 ${
+                        className={`min-h-[44px] sm:min-h-[40px] w-full text-base sm:text-sm bg-zinc-950/70 border-zinc-800 text-white focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-xl ${
                           errors.paymentAmount
                             ? "border-red-500 focus-visible:ring-red-500/30"
                             : ""
@@ -1295,7 +1299,7 @@ export function UserInformationForm() {
                     <div className="flex items-center justify-between">
                       <Label
                         htmlFor="gcashReferenceNumber"
-                        className="text-sm font-medium text-zinc-200"
+                        className="text-xs sm:text-sm font-medium text-zinc-200"
                       >
                         <span className="flex items-center gap-1.5">
                           <Hash className="size-3.5 text-zinc-400" />
@@ -1314,6 +1318,7 @@ export function UserInformationForm() {
                       name="gcashReferenceNumber"
                       type="text"
                       inputMode="numeric"
+                      autoComplete="off"
                       placeholder={t.form.gcashRefPlaceholder}
                       value={formData.gcashReferenceNumber}
                       onKeyDown={handleNumericKeyDown}
@@ -1332,7 +1337,7 @@ export function UserInformationForm() {
                           ? "ref-error"
                           : "ref-help"
                       }
-                      className={`h-11 sm:h-10 text-base sm:text-sm font-mono bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 ${
+                      className={`min-h-[44px] sm:min-h-[40px] text-base sm:text-sm font-mono bg-zinc-950/70 border-zinc-800 text-white placeholder:text-zinc-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500 rounded-xl ${
                         errors.gcashReferenceNumber
                           ? "border-red-500 focus-visible:ring-red-500/30"
                           : ""
@@ -1357,7 +1362,7 @@ export function UserInformationForm() {
 
               {/* Authentication & Database Status Banners */}
               {submissionError && (
-                <div className="rounded-xl border border-rose-500/30 bg-rose-950/40 p-3.5 text-xs text-rose-300 flex items-start gap-2.5">
+                <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-950/40 p-3.5 text-xs text-rose-300 flex items-start gap-2.5">
                   <AlertCircle className="size-4 text-rose-400 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
                     <p className="font-semibold text-rose-200">Database Submission Failed</p>
@@ -1384,7 +1389,7 @@ export function UserInformationForm() {
                   variant="outline"
                   onClick={handleReset}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 h-11 sm:h-10 text-sm disabled:opacity-50"
+                  className="w-full sm:w-auto cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 min-h-[44px] sm:min-h-[40px] text-sm disabled:opacity-50 rounded-xl"
                 >
                   <RotateCcw className="mr-2 size-4" />
                   {t.form.clearFormBtn}
@@ -1392,7 +1397,7 @@ export function UserInformationForm() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] h-11 sm:h-10 text-sm disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                  className="w-full sm:w-auto cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] min-h-[44px] sm:min-h-[40px] text-sm disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-[0.98] rounded-xl"
                 >
                   {isSubmitting ? (
                     <>
@@ -1499,7 +1504,7 @@ export function UserInformationForm() {
                 const el = document.getElementById("submission-history");
                 if (el) el.scrollIntoView({ behavior: "smooth" });
               }}
-              className="w-full sm:w-auto cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 h-10"
+              className="w-full sm:w-auto cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 min-h-[44px] sm:min-h-[40px] rounded-xl text-xs sm:text-sm font-medium"
             >
               <History className="mr-1.5 size-3.5" />
               {t.form.modal.viewInHistory}
@@ -1507,7 +1512,7 @@ export function UserInformationForm() {
             <Button
               type="button"
               onClick={() => setIsDialogOpen(false)}
-              className="w-full sm:w-auto cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.35)] h-10"
+              className="w-full sm:w-auto cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.35)] min-h-[44px] sm:min-h-[40px] rounded-xl text-xs sm:text-sm"
             >
               {t.form.modal.done}
             </Button>

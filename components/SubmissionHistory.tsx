@@ -149,9 +149,9 @@ export function SubmissionHistory() {
   return (
     <section
       id="submission-history"
-      className="scroll-mt-20 py-12 md:py-16 border-t border-zinc-800/80 bg-zinc-950/40"
+      className="scroll-mt-20 py-10 md:py-16 border-t border-zinc-800/80 bg-zinc-950/40"
     >
-      <div className="container mx-auto max-w-5xl px-4 sm:px-6 space-y-6">
+      <div className="container mx-auto max-w-5xl px-3 sm:px-6 space-y-5 sm:space-y-6">
         {/* Header & Actions */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -159,10 +159,10 @@ export function SubmissionHistory() {
               <History className="size-3.5" />
               <span>{t.history.sessionLogBadge}</span>
             </div>
-            <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+            <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight text-white break-words">
               {t.history.title}
             </h2>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-xs sm:text-sm text-zinc-400 leading-relaxed">
               {t.history.subtitle}
             </p>
           </div>
@@ -173,7 +173,7 @@ export function SubmissionHistory() {
               variant="outline"
               size="sm"
               onClick={scrollToForm}
-              className="cursor-pointer border-emerald-500/30 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/50 hover:text-white text-xs font-medium w-full sm:w-auto h-9"
+              className="cursor-pointer border-emerald-500/30 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/50 hover:text-white text-xs font-medium w-full sm:w-auto min-h-[40px] sm:min-h-[36px] rounded-xl"
             >
               <ArrowUp className="mr-1.5 size-3.5" />
               {t.history.returnToForm}
@@ -182,7 +182,7 @@ export function SubmissionHistory() {
         </div>
 
         {/* Temporary Storage Notice */}
-        <div className="flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs text-zinc-400 backdrop-blur-xs">
+        <div className="flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3.5 sm:p-4 text-xs text-zinc-400 backdrop-blur-xs">
           <Info className="size-4 shrink-0 text-emerald-400 mt-0.5" />
           <div className="space-y-0.5">
             <p className="font-semibold text-zinc-200">
@@ -216,36 +216,46 @@ export function SubmissionHistory() {
         {/* Submissions Container */}
         <div className="rounded-2xl border border-zinc-800/90 bg-zinc-900/80 shadow-xl overflow-hidden backdrop-blur-sm">
           {/* Container Header with Active / Archived Tabs */}
-          <div className="p-4 sm:p-5 border-b border-zinc-800/80 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="p-3.5 sm:p-5 border-b border-zinc-800/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               {/* Tab Switcher: Active Submissions vs Archived */}
-              <div className="inline-flex items-center rounded-xl border border-zinc-800 bg-zinc-950/90 p-1 text-xs">
+              <div className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex items-center rounded-xl border border-zinc-800 bg-zinc-950/90 p-1 text-xs">
                 <button
                   type="button"
                   onClick={() => setHistoryView("active")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                  className={`min-h-[38px] sm:min-h-[32px] flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
                     historyView === "active"
                       ? "bg-emerald-500 text-zinc-950 shadow-xs"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
-                  {t.history.archiveUi.viewActiveTab} ({activeSubmissions.length})
+                  <span>{t.history.archiveUi.viewActiveTab}</span>
+                  <span className={`ml-1.5 px-1.5 py-0.2 rounded text-[10px] font-mono ${
+                    historyView === "active" ? "bg-emerald-950/20 text-zinc-950" : "bg-zinc-800 text-zinc-400"
+                  }`}>
+                    {activeSubmissions.length}
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setHistoryView("archived")}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                  className={`min-h-[38px] sm:min-h-[32px] inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
                     historyView === "archived"
                       ? "bg-amber-500 text-zinc-950 shadow-xs"
                       : "text-zinc-400 hover:text-amber-300"
                   }`}
                 >
                   <Archive className="size-3" />
-                  <span>{t.history.archiveUi.viewArchivedTab(archivedSubmissions.length)}</span>
+                  <span>{t.history.archiveUi.viewArchivedTab(archivedSubmissions.length).split('(')[0].trim()}</span>
+                  <span className={`ml-1 px-1.5 py-0.2 rounded text-[10px] font-mono ${
+                    historyView === "archived" ? "bg-amber-950/20 text-zinc-950" : "bg-zinc-800 text-zinc-400"
+                  }`}>
+                    {archivedSubmissions.length}
+                  </span>
                 </button>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between sm:justify-end gap-3">
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-950/40 px-2.5 py-0.5 text-[10px] font-semibold text-amber-300">
                   <ShieldAlert className="size-3" />
                   <span>{t.history.archiveUi.uiPreviewBadge}</span>
@@ -253,7 +263,7 @@ export function SubmissionHistory() {
 
                 <Link
                   href="/admin"
-                  className="text-xs text-zinc-400 hover:text-emerald-300 inline-flex items-center gap-1 transition-colors"
+                  className="text-xs text-zinc-400 hover:text-emerald-300 inline-flex items-center gap-1 transition-colors min-h-[36px]"
                 >
                   <span>{t.history.adminViewLink}</span>
                   <ExternalLink className="size-3" />
@@ -646,7 +656,7 @@ export function SubmissionHistory() {
                             type="button"
                             variant="outline"
                             onClick={() => openDialog("archive", sub)}
-                            className="flex-1 cursor-pointer border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 h-10 sm:h-9 text-xs font-semibold focus-visible:ring-amber-500/50"
+                            className="flex-1 cursor-pointer border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/50 text-amber-300 min-h-[44px] sm:min-h-[38px] text-xs font-semibold focus-visible:ring-amber-500/50 rounded-xl"
                           >
                             <Archive className="mr-1.5 size-3.5" />
                             {t.history.archiveUi.archiveBtn}
@@ -655,7 +665,7 @@ export function SubmissionHistory() {
                           <Button
                             type="button"
                             onClick={() => openDialog("restore", sub)}
-                            className="flex-1 cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 h-10 sm:h-9 text-xs focus-visible:ring-emerald-500/50"
+                            className="flex-1 cursor-pointer font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 min-h-[44px] sm:min-h-[38px] text-xs focus-visible:ring-emerald-500/50 rounded-xl shadow-xs"
                           >
                             <RotateCcw className="mr-1.5 size-3.5" />
                             {t.history.archiveUi.restoreBtn}
@@ -673,7 +683,7 @@ export function SubmissionHistory() {
 
       {/* Confirmation Dialog Modal for Customer Submissions View */}
       <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => !open && !isProcessingAction && closeDialog()}>
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-2xl max-h-[88dvh] overflow-y-auto overscroll-contain">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-md border-zinc-800 bg-zinc-950/95 text-zinc-100 p-4 sm:p-6 shadow-2xl max-h-[88dvh] overflow-y-auto overscroll-contain rounded-2xl">
           <DialogHeader className="gap-2">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/60 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
@@ -740,7 +750,7 @@ export function SubmissionHistory() {
               variant="outline"
               disabled={isProcessingAction}
               onClick={closeDialog}
-              className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-300 h-9 text-xs"
+              className="cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-300 min-h-[44px] sm:min-h-[38px] text-xs rounded-xl"
             >
               {t.history.archiveUi.confirmDialog.cancelBtn}
             </Button>
@@ -748,7 +758,7 @@ export function SubmissionHistory() {
               type="button"
               disabled={isProcessingAction}
               onClick={handleConfirmAction}
-              className={`cursor-pointer font-semibold h-9 text-xs shadow-md ${
+              className={`cursor-pointer font-semibold min-h-[44px] sm:min-h-[38px] text-xs shadow-md rounded-xl ${
                 confirmDialog.action === "archive"
                   ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
                   : "bg-emerald-500 hover:bg-emerald-400 text-zinc-950"

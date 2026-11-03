@@ -25,7 +25,7 @@ export function LanguageSwitcher({ className = "" }: LanguageSwitcherProps) {
         onClick={() => setLanguage("en")}
         aria-pressed={language === "en"}
         aria-label="Switch to English"
-        className={`flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 text-xs font-semibold transition-all cursor-pointer min-h-[30px] min-w-[28px] sm:min-w-[32px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+        className={`flex items-center justify-center rounded-md px-2 py-1 text-xs font-semibold transition-all cursor-pointer min-h-[34px] min-w-[32px] sm:min-h-[28px] sm:min-w-[30px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
           language === "en"
             ? "bg-emerald-500 text-zinc-950 shadow-xs"
             : "text-zinc-400 hover:text-white"
@@ -39,7 +39,7 @@ export function LanguageSwitcher({ className = "" }: LanguageSwitcherProps) {
         onClick={() => setLanguage("ceb")}
         aria-pressed={language === "ceb"}
         aria-label="Switch to Bisaya (Cebuano)"
-        className={`flex items-center justify-center rounded-md px-1.5 sm:px-2 py-1 text-xs font-semibold transition-all cursor-pointer min-h-[30px] min-w-[28px] sm:min-w-[32px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+        className={`flex items-center justify-center rounded-md px-2 py-1 text-xs font-semibold transition-all cursor-pointer min-h-[34px] min-w-[32px] sm:min-h-[28px] sm:min-w-[30px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
           language === "ceb"
             ? "bg-emerald-500 text-zinc-950 shadow-xs"
             : "text-zinc-400 hover:text-white"

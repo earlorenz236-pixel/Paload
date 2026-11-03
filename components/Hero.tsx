@@ -48,15 +48,15 @@ export function Hero() {
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[320px] bg-emerald-500/12 blur-[100px] rounded-full" />
       </div>
 
-      <div className="container relative z-10 mx-auto max-w-5xl px-4 sm:px-6 text-center">
+      <div className="container relative z-10 mx-auto max-w-5xl px-3 sm:px-6 text-center">
         {/* Pill Badge */}
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/50 px-3.5 py-1 text-xs font-medium text-emerald-300 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.15)] sm:text-sm">
+        <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/50 px-3.5 py-1 text-xs font-medium text-emerald-300 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.15)] sm:text-sm">
           <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
-          <span>{t.hero.pill}</span>
+          <span className="truncate max-w-[260px] sm:max-w-none">{t.hero.pill}</span>
         </div>
 
         {/* System Name with React Bits BlurText */}
-        <div className="mb-3 flex justify-center">
+        <div className="mb-3 flex justify-center px-2">
           <BlurText
             text="Paload ko"
             delay={80}
@@ -67,52 +67,52 @@ export function Hero() {
         </div>
 
         {/* Clear Headline */}
-        <h1 className="mx-auto max-w-3xl text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white px-2">
+        <h1 className="mx-auto max-w-3xl text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white px-2 leading-tight sm:leading-tight break-words">
           {t.hero.headline}
         </h1>
 
         {/* Friendly Description */}
-        <p className="mx-auto mt-4 max-w-2xl text-sm sm:text-lg sm:leading-relaxed text-zinc-300 px-2">
+        <p className="mx-auto mt-4 max-w-2xl text-xs sm:text-base md:text-lg sm:leading-relaxed text-zinc-300 px-2 leading-relaxed">
           {t.hero.descriptionWelcome}{" "}
           <strong className="text-emerald-400 font-semibold">{t.hero.descriptionBrand}</strong>
           {t.hero.descriptionBody}
         </p>
 
         {/* Call-to-action button */}
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row px-4">
+        <div className="mt-7 sm:mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row px-2">
           <Button
             size="lg"
             onClick={scrollToForm}
-            className="group h-11 w-full sm:w-auto px-7 text-sm sm:text-base font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_35px_rgba(16,185,129,0.7)] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="group min-h-[44px] h-12 sm:h-11 w-full sm:w-auto px-7 text-sm sm:text-base font-semibold bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-[0_0_25px_rgba(16,185,129,0.45)] hover:shadow-[0_0_35px_rgba(16,185,129,0.7)] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
             <span>{t.hero.fillButton}</span>
-            <ArrowDown className="size-4 transition-transform group-hover:translate-y-0.5" />
+            <ArrowDown className="size-4 transition-transform group-hover:translate-y-0.5 ml-1" />
           </Button>
         </div>
 
         {/* Supported Units Highlights */}
-        <div className="mt-12 pt-8 border-t border-emerald-950/60 px-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/90 mb-4">
+        <div className="mt-10 sm:mt-12 pt-7 sm:pt-8 border-t border-emerald-950/60 px-1">
+          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-400/90 mb-3 sm:mb-4">
             {t.hero.supportedUnitsTitle}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 max-w-3xl mx-auto">
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50 min-h-[44px]">
               <Radio className="size-3.5 sm:size-4 text-emerald-400 shrink-0" />
               <span>Satellite</span>
             </div>
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50 min-h-[44px]">
               <Tv className="size-3.5 sm:size-4 text-emerald-400 shrink-0" />
               <span>GSat</span>
             </div>
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50 min-h-[44px]">
               <ShieldCheck className="size-3.5 sm:size-4 text-emerald-400 shrink-0" />
               <span>Fili TV</span>
             </div>
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50 min-h-[44px]">
               <Radio className="size-3.5 sm:size-4 text-emerald-400 shrink-0" />
               <span>Sky Direct</span>
             </div>
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50 col-span-2 sm:col-span-1">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-emerald-500/25 bg-zinc-900/70 p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-zinc-100 backdrop-blur-md shadow-xs transition-colors hover:border-emerald-500/50 col-span-2 sm:col-span-1 min-h-[44px]">
               <Tv className="size-3.5 sm:size-4 text-emerald-400 shrink-0" />
               <span>Signal</span>
             </div>

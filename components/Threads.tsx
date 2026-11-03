@@ -441,7 +441,8 @@ const Threads = ({
       gl.uniform1f(lineUniforms.uAmplitude, s.amplitude);
       gl.uniform1f(lineUniforms.uDistance, s.distance);
       gl.uniform2f(lineUniforms.uMouse, mouse[0], mouse[1]);
-      gl.uniform1f(lineUniforms.uCount, s.lineCount);
+      const effectiveLineCount = state.width < 640 ? Math.min(s.lineCount, 42) : s.lineCount;
+      gl.uniform1f(lineUniforms.uCount, effectiveLineCount);
       gl.uniform1f(lineUniforms.uThickness, s.thickness);
       gl.uniform1f(lineUniforms.uSoftness, s.softness);
       gl.uniform1f(lineUniforms.uWaves, s.waves);
@@ -454,7 +455,7 @@ const Threads = ({
       gl.uniform3f(lineUniforms.uColor, state.color[0], state.color[1], state.color[2]);
       gl.uniform3f(lineUniforms.uAccent, state.accent[0], state.accent[1], state.accent[2]);
       gl.bindVertexArray(lineVao);
-      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, (state.segments + 1) * 2, s.lineCount);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, (state.segments + 1) * 2, effectiveLineCount);
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, w, h);

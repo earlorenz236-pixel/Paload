@@ -104,19 +104,19 @@ function AdminLoginContent() {
   return (
     <div className="flex min-h-screen flex-col bg-[#060807] text-zinc-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
       {/* Top bar with back link and language switcher */}
-      <header className="border-b border-zinc-800/80 bg-[#060807]/90 backdrop-blur-md px-4 sm:px-6 py-3.5">
-        <div className="container mx-auto flex max-w-5xl items-center justify-between">
+      <header className="border-b border-zinc-800/80 bg-[#060807]/90 backdrop-blur-md px-3 sm:px-6 py-3">
+        <div className="container mx-auto flex max-w-5xl items-center justify-between gap-2">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xs sm:text-sm font-medium text-zinc-400 hover:text-emerald-400 transition-colors group"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-zinc-400 hover:text-emerald-400 transition-colors group min-h-[36px]"
           >
-            <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
-            <span>Back to Paload ko</span>
+            <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5 shrink-0" />
+            <span className="truncate">Back to Paload ko</span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <LanguageSwitcher />
-            <div className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 text-[11px] font-semibold text-zinc-400">
+            <div className="hidden xs:flex sm:flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/60 px-2.5 py-1 text-[11px] font-semibold text-zinc-400">
               <Shield className="size-3 text-emerald-400" />
               <span>Admin Portal</span>
             </div>
@@ -125,7 +125,7 @@ function AdminLoginContent() {
       </header>
 
       {/* Main Login Container */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <main className="flex-1 flex items-center justify-center p-3.5 sm:p-6 md:p-8">
         <div className="w-full max-w-md">
           {/* Card Header Branding */}
           <div className="flex flex-col items-center text-center mb-6">
@@ -138,14 +138,14 @@ function AdminLoginContent() {
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
               Administrator Login
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-zinc-400">
+            <p className="mt-1 text-xs sm:text-sm text-zinc-400 leading-relaxed px-2">
               Restricted management portal for Paload ko operators
             </p>
           </div>
 
           {/* If the current session does not belong to the designated admin, show a strict warning */}
           {user && (role !== "admin" || user.email?.toLowerCase().trim() !== AUTHORIZED_ADMIN_EMAIL) ? (
-            <Card className="border-amber-500/30 bg-gradient-to-b from-zinc-900/90 to-zinc-950/90 shadow-xl backdrop-blur-md">
+            <Card className="border-amber-500/30 bg-gradient-to-b from-zinc-900/90 to-zinc-950/90 shadow-xl backdrop-blur-md rounded-2xl">
               <CardHeader className="pb-3 text-center">
                 <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
                   <ShieldAlert className="size-5" />
@@ -161,7 +161,7 @@ function AdminLoginContent() {
                 <Button
                   onClick={handleSwitchAccount}
                   variant="outline"
-                  className="w-full border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs sm:text-sm h-10"
+                  className="w-full border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs sm:text-sm min-h-[44px] sm:min-h-[40px] rounded-xl"
                 >
                   <LogIn className="size-4 mr-2 text-emerald-400" />
                   Sign Out & Sign in as Administrator
@@ -170,7 +170,7 @@ function AdminLoginContent() {
                 <Link href="/" className="block">
                   <Button
                     variant="ghost"
-                    className="w-full text-xs text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                    className="w-full text-xs text-zinc-400 hover:text-white hover:bg-zinc-800/50 min-h-[40px] rounded-xl"
                   >
                     Return to Customer Home
                   </Button>
@@ -179,19 +179,19 @@ function AdminLoginContent() {
             </Card>
           ) : (
             /* Administrator Login Form */
-            <Card className="border-zinc-800 bg-zinc-900/80 shadow-2xl backdrop-blur-md">
+            <Card className="border-zinc-800 bg-zinc-900/80 shadow-2xl backdrop-blur-md rounded-2xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold text-white">
                   Enter Admin Credentials
                 </CardTitle>
-                <CardDescription className="text-xs text-zinc-400">
+                <CardDescription className="text-xs text-zinc-400 leading-relaxed">
                   Protected by server-side verification and PostgreSQL Row Level Security.
                 </CardDescription>
               </CardHeader>
 
               <CardContent>
                 {errorMessage && (
-                  <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-950/40 p-3 text-xs text-red-300">
+                  <div role="alert" className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-xs text-red-300">
                     <AlertCircle className="size-4 shrink-0 mt-0.5 text-red-400" />
                     <span>{errorMessage}</span>
                   </div>
@@ -199,41 +199,47 @@ function AdminLoginContent() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-zinc-300">
+                    <label htmlFor="admin-email" className="text-xs font-medium text-zinc-300 cursor-pointer">
                       Admin Email Address
                     </label>
                     <Input
+                      id="admin-email"
+                      name="email"
                       type="email"
+                      autoComplete="username"
                       required
                       placeholder="admin@paloadko.ph"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={isSubmitting}
-                      className="border-zinc-800 bg-zinc-950/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-emerald-500/50"
+                      className="border-zinc-800 bg-zinc-950/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-emerald-500/50 min-h-[44px] sm:min-h-[40px] text-base sm:text-xs rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-medium text-zinc-300">
+                      <label htmlFor="admin-password" className="text-xs font-medium text-zinc-300 cursor-pointer">
                         Password
                       </label>
                     </div>
                     <Input
+                      id="admin-password"
+                      name="password"
                       type="password"
+                      autoComplete="current-password"
                       required
                       placeholder="••••••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isSubmitting}
-                      className="border-zinc-800 bg-zinc-950/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-emerald-500/50"
+                      className="border-zinc-800 bg-zinc-950/70 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-2 focus-visible:ring-emerald-500/50 min-h-[44px] sm:min-h-[40px] text-base sm:text-xs rounded-xl"
                     />
                   </div>
 
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all h-10 mt-2"
+                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all min-h-[44px] text-sm mt-3 rounded-xl cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
@@ -252,7 +258,7 @@ function AdminLoginContent() {
                 <div className="mt-6 pt-4 border-t border-zinc-800/80 text-center">
                   <p className="text-[11px] text-zinc-500">
                     Not an administrator?{" "}
-                    <Link href="/" className="text-emerald-400 hover:underline">
+                    <Link href="/" className="text-emerald-400 hover:underline min-h-[30px] inline-flex items-center">
                       Return to customer portal
                     </Link>
                   </p>
