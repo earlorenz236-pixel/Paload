@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,6 +127,7 @@ const INITIAL_FORM: FormData = {
 };
 
 export function UserInformationForm() {
+  const router = useRouter();
   const { addSubmission } = useSubmissions();
   const { language, t } = useLanguage();
   const { user, profile, loading: authLoading, openAuthModal } = useAuth();
@@ -1502,7 +1504,11 @@ export function UserInformationForm() {
               onClick={() => {
                 setIsDialogOpen(false);
                 const el = document.getElementById("submission-history");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth" });
+                } else {
+                  router.push("/history");
+                }
               }}
               className="w-full sm:w-auto cursor-pointer border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 text-zinc-200 min-h-[44px] sm:min-h-[40px] rounded-xl text-xs sm:text-sm font-medium"
             >

@@ -3,7 +3,6 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { UserInformationForm } from "@/components/UserInformationForm";
-import { SubmissionHistory } from "@/components/SubmissionHistory";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/context/AuthContext";
 
@@ -17,7 +16,6 @@ export default function Home() {
         {/* Render public landing page Hero ONLY when the customer is unauthenticated */}
         {!loading && !user && <Hero />}
         <UserInformationForm />
-        <SubmissionHistory />
       </main>
       <Footer />
     </div>
